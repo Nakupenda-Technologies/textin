@@ -170,6 +170,15 @@ class _ChatViewState extends ConsumerState<_ChatView> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
+                if (state.messages.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No messages yet 💬',
+                      style: AppTextStyle.bodySecondary,
+                    ),
+                  );
+                }
+
                 return ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(vertical: 12),

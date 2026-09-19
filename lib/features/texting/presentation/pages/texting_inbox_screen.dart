@@ -170,7 +170,7 @@ class _TextingInboxScreenState extends ConsumerState<TextingInboxScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'No conversations found',
+                          'No conversations yet 💬',
                           style: AppTextStyle.heading3.copyWith(
                             color: AppColors.textSecondary,
                           ),
