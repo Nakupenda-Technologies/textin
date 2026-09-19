@@ -1,5 +1,5 @@
 export 'package:flutter/material.dart';
-export 'package:flutter_bloc/flutter_bloc.dart';
+export 'package:flutter_riverpod/flutter_riverpod.dart';
 export '../config/env/env.dart';
 export '../core/di/locator.dart';
 export '../core/theme/app_theme.dart';

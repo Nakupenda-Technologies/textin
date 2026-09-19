@@ -1,26 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/env/env.dart';
-import '../core/di/locator.dart';
 import '../core/theme/app_theme.dart';
-import '../features/home/cubit/home_cubit.dart';
-import '../features/texting/cubit/inbox/inbox_cubit.dart';
 import '../router/app_router.dart';
 
 class TextinApp extends StatelessWidget {
-  const TextinApp({super.key});
+  const TextinApp({
+    super.key,
+    this.observers = const [],
+    this.overrides = const [],
+  });
+
+  final List<ProviderObserver> observers;
+  final List<Override> overrides;
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<InboxCubit>(
-          create: (_) => locator<InboxCubit>()..loadConversations(),
-        ),
-        BlocProvider<HomeCubit>(
-          create: (_) => locator<HomeCubit>()..loadProfile(),
-        ),
-      ],
+    return ProviderScope(
+      observers: observers,
+      overrides: overrides,
       child: MaterialApp(
         title: Env.appName,
         debugShowCheckedModeBanner: false,
