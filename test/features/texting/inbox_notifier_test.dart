@@ -12,13 +12,41 @@ import 'package:textin/features/texting/services/texting_socket_service.dart';
 import 'package:textin/services/local_storage_service.dart';
 import 'package:textin/services/websocket_service.dart';
 
+final _testConversations = [
+  Conversation(
+    id: '1',
+    name: 'Thomas Baker',
+    isPinned: true,
+    isOnline: true,
+    hasFireBadge: true,
+    tag: ConversationTag.romantic,
+    messages: [
+      Message(
+        id: 'm1',
+        content: 'Good afternoon!',
+        type: MessageType.text,
+        isMe: false,
+        timestamp: DateTime.now().subtract(const Duration(days: 1)),
+      ),
+    ],
+  ),
+  const Conversation(
+    id: '2',
+    name: 'Andrew Harris',
+    isPinned: false,
+    isOnline: true,
+    hasFireBadge: true,
+    tag: ConversationTag.professional,
+  ),
+];
+
 class MockTextingRepository implements TextingRepository {
   @override
   Future<Either<Failure, List<Conversation>>> fetchRegularChats(
     int filterIndex, {
     required String myUserId,
   }) async {
-    return Right(Conversation.mockData);
+    return Right(_testConversations);
   }
 
   @override
