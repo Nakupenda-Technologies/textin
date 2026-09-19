@@ -1,3 +1,5 @@
+import '../../../config/constants/endpoints.dart';
+import '../../../core/errors/failure.dart';
 import '../../../core/network/client.dart';
 import '../models/user_profile.dart';
 
@@ -12,10 +14,13 @@ class HomeRemoteDataSource implements HomeDataSource {
 
   @override
   Future<UserProfile> fetchUserProfile() async {
-    return const UserProfile(
-      id: '1',
-      name: 'Textin User',
-      status: 'Hey there! I am using Textin.',
-    );
+    final dynamic response = await client.get(Endpoints.profile);
+    if (response is Map<String, dynamic>) {
+      final data = response['data'] ?? response;
+      if (data is Map<String, dynamic>) {
+        return UserProfile.fromJson(data);
+      }
+    }
+    throw const ServerFailure('Invalid profile response');
   }
 }
