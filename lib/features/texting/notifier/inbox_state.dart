@@ -60,6 +60,10 @@ class InboxState extends Equatable {
   int get totalUnreadCount =>
       conversations.where((c) => !c.inSecretInbox).fold(0, (sum, c) => sum + c.unreadCount);
 
+  int get secretConversationsCount =>
+      conversations.where((c) => c.inSecretInbox).length;
+
+
   InboxState copyWith({
     InboxStatus? status,
     List<Conversation>? conversations,

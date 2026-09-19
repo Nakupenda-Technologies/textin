@@ -2,8 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/text_style.dart';
+import '../../../../shared/theme/app_theme.dart';
 import '../../models/conversation.dart';
 import '../../models/message.dart';
+
 
 class ConversationTile extends StatelessWidget {
   const ConversationTile({
@@ -60,7 +62,7 @@ class ConversationTile extends StatelessWidget {
                               const Icon(
                                 Icons.push_pin,
                                 size: 14,
-                                color: AppColors.primary,
+                                color: AppTheme.red,
                               ),
                             ],
                           ],
@@ -69,27 +71,33 @@ class ConversationTile extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         conversation.timeAgo,
-                        style: AppTextStyle.bodySecondary.copyWith(fontSize: 12),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: conversation.unreadCount > 0
+                              ? AppTheme.red
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
+                      if (conversation.tag != ConversationTag.none)
+                        _TagChip(tag: conversation.tag),
                       Expanded(
                         child: _LastMessageSnippet(conversation: conversation),
                       ),
                       if (conversation.unreadCount > 0) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 3,
+                          width: 20,
+                          height: 20,
+                          decoration: const BoxDecoration(
+                            color: AppTheme.red,
+                            shape: BoxShape.circle,
                           ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          alignment: Alignment.center,
                           child: Text(
                             conversation.unreadCount > 99
                                 ? '99+'
@@ -97,7 +105,7 @@ class ConversationTile extends StatelessWidget {
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -172,11 +180,13 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         CircleAvatar(
           radius: 26,
-          backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+          backgroundColor: cs.onSurface.withValues(alpha: 0.10),
           backgroundImage: conversation.avatarUrl != null
               ? CachedNetworkImageProvider(conversation.avatarUrl!)
               : null,
@@ -185,23 +195,23 @@ class _Avatar extends StatelessWidget {
                   conversation.name.isNotEmpty
                       ? conversation.name[0].toUpperCase()
                       : '?',
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: cs.onSurface.withValues(alpha: 0.55),
                     fontWeight: FontWeight.bold,
-                    fontSize: 20,
+                    fontSize: 18,
                   ),
                 )
               : null,
         ),
         if (conversation.isOnline)
           Positioned(
-            right: 0,
-            bottom: 0,
+            right: 1,
+            bottom: 1,
             child: Container(
-              width: 13,
-              height: 13,
+              width: 12,
+              height: 12,
               decoration: BoxDecoration(
-                color: AppColors.success,
+                color: AppTheme.textingOnlineDot,
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 2),
               ),
@@ -211,6 +221,76 @@ class _Avatar extends StatelessWidget {
     );
   }
 }
+
+class _TagChip extends StatelessWidget {
+  const _TagChip({required this.tag});
+
+  final ConversationTag tag;
+
+  String get label {
+    switch (tag) {
+      case ConversationTag.romantic:
+        return 'Romantic';
+      case ConversationTag.professional:
+        return 'Professional';
+      case ConversationTag.chill:
+        return 'Chill';
+      case ConversationTag.excited:
+        return 'Excited';
+      case ConversationTag.none:
+        return '';
+    }
+  }
+
+  Color get bg {
+    switch (tag) {
+      case ConversationTag.romantic:
+        return AppTheme.textingTagRomanticBg;
+      case ConversationTag.professional:
+        return AppTheme.textingTagProfessionalBg;
+      case ConversationTag.chill:
+        return AppTheme.textingTagChillBg;
+      case ConversationTag.excited:
+        return AppTheme.textingTagExcitedBg;
+      case ConversationTag.none:
+        return Colors.transparent;
+    }
+  }
+
+  Color get fg {
+    switch (tag) {
+      case ConversationTag.romantic:
+        return Colors.white;
+      case ConversationTag.professional:
+        return AppTheme.textingTagProfessionalFg;
+      case ConversationTag.chill:
+        return AppTheme.textingTagChillFg;
+      case ConversationTag.excited:
+        return AppTheme.textingTagExcitedFg;
+      case ConversationTag.none:
+        return Colors.transparent;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (tag == ConversationTag.none) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: fg.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: fg),
+      ),
+    );
+  }
+}
+
 
 class _LastMessageSnippet extends StatelessWidget {
   const _LastMessageSnippet({required this.conversation});
