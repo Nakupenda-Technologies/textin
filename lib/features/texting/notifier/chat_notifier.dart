@@ -93,7 +93,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
     final result = await repository.fetchMessages(chatId, myUserId: myUserId);
     result.fold(
       (failure) {
-        // If messages are already present (from conversation preview or mock), don't wipe
         if (state.messages.isEmpty) {
           state = state.copyWith(status: ChatStatus.error, errorMessage: failure.message);
         } else {

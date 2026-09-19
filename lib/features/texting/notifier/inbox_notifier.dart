@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/di/locator.dart';
-import '../models/conversation.dart';
 import '../models/message.dart';
 import '../repository/texting_repository.dart';
 import '../services/texting_socket_service.dart';
@@ -92,24 +91,15 @@ class InboxNotifier extends StateNotifier<InboxState> {
 
     result.fold(
       (failure) {
-        // If API fails or backend is offline, fall back to mock data for instant preview
-        if (state.conversations.isEmpty) {
-          state = state.copyWith(
-            status: InboxStatus.loaded,
-            conversations: Conversation.mockData,
-            errorMessage: failure.message,
-          );
-        } else {
-          state = state.copyWith(
-            status: InboxStatus.error,
-            errorMessage: failure.message,
-          );
-        }
+        state = state.copyWith(
+          status: InboxStatus.error,
+          errorMessage: failure.message,
+        );
       },
       (chats) {
         state = state.copyWith(
           status: InboxStatus.loaded,
-          conversations: chats.isEmpty ? Conversation.mockData : chats,
+          conversations: chats,
         );
       },
     );
