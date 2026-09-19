@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/text_style.dart';
+import '../../../../shared/theme/app_theme.dart';
 import '../../models/message.dart';
 
 class MessageBubble extends StatefulWidget {
@@ -66,6 +67,16 @@ class _MessageBubbleState extends State<MessageBubble> {
   @override
   Widget build(BuildContext context) {
     final isMe = widget.message.isMe;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+
+    final bubbleBg = isMe
+        ? AppTheme.textingSentBubble
+        : (isDark ? AppTheme.darkTextingReceivedBubble : Colors.white);
+    final textFg = isMe ? const Color(0xFF163917) : cs.onSurface;
+    final timeFg = isMe
+        ? const Color(0xFF163917).withValues(alpha: 0.65)
+        : cs.onSurface.withValues(alpha: 0.55);
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -75,14 +86,20 @@ class _MessageBubbleState extends State<MessageBubble> {
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         decoration: BoxDecoration(
-          color: isMe ? AppColors.primary : Colors.white,
+          color: bubbleBg,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
             bottomLeft: Radius.circular(isMe ? 16 : 4),
             bottomRight: Radius.circular(isMe ? 4 : 16),
           ),
-          border: isMe ? null : Border.all(color: AppColors.border),
+          border: isMe
+              ? null
+              : Border.all(
+                  color: isDark
+                      ? AppTheme.darkBorder
+                      : const Color(0xFFDDDEE2),
+                ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -105,7 +122,7 @@ class _MessageBubbleState extends State<MessageBubble> {
               Text(
                 widget.message.content,
                 style: AppTextStyle.body.copyWith(
-                  color: isMe ? Colors.white : AppColors.textPrimary,
+                  color: textFg,
                 ),
               ),
             const SizedBox(height: 4),
@@ -116,9 +133,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                   widget.message.formattedTime,
                   style: TextStyle(
                     fontSize: 11,
-                    color: isMe
-                        ? Colors.white.withValues(alpha: 0.75)
-                        : AppColors.textSecondary,
+                    color: timeFg,
                   ),
                 ),
                 if (isMe) ...[
@@ -156,13 +171,15 @@ class _MessageBubbleState extends State<MessageBubble> {
 
   Widget _buildVoiceMessage(bool isMe) {
     final durationText = widget.message.formattedDuration;
+    final fg = isMe ? const Color(0xFF163917) : Theme.of(context).colorScheme.primary;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
           icon: Icon(
             _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
-            color: isMe ? Colors.white : AppColors.primary,
+            color: fg,
             size: 32,
           ),
           onPressed: _toggleVoicePlayback,
@@ -177,11 +194,9 @@ class _MessageBubbleState extends State<MessageBubble> {
                     .clamp(0.0, 1.0)
                 : 0.0,
             backgroundColor: isMe
-                ? Colors.white.withValues(alpha: 0.3)
+                ? const Color(0xFF163917).withValues(alpha: 0.2)
                 : AppColors.primary.withValues(alpha: 0.15),
-            valueColor: AlwaysStoppedAnimation<Color>(
-              isMe ? Colors.white : AppColors.primary,
-            ),
+            valueColor: AlwaysStoppedAnimation<Color>(fg),
           ),
         ),
         const SizedBox(width: 8),
@@ -189,7 +204,7 @@ class _MessageBubbleState extends State<MessageBubble> {
           durationText,
           style: TextStyle(
             fontSize: 12,
-            color: isMe ? Colors.white : AppColors.textSecondary,
+            color: isMe ? const Color(0xFF163917) : AppColors.textSecondary,
           ),
         ),
       ],
@@ -202,7 +217,7 @@ class _MessageBubbleState extends State<MessageBubble> {
         return Icon(
           Icons.access_time,
           size: 13,
-          color: Colors.white.withValues(alpha: 0.7),
+          color: const Color(0xFF163917).withValues(alpha: 0.55),
         );
       case MessageStatus.failed:
         return const Icon(
@@ -215,8 +230,8 @@ class _MessageBubbleState extends State<MessageBubble> {
           widget.message.isRead ? Icons.done_all : Icons.done,
           size: 14,
           color: widget.message.isRead
-              ? Colors.lightBlueAccent
-              : Colors.white.withValues(alpha: 0.75),
+              ? AppTheme.textingSendBtn
+              : const Color(0xFF163917).withValues(alpha: 0.55),
         );
     }
   }

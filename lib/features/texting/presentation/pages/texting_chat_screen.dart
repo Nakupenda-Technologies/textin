@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/text_style.dart';
+import '../../../../shared/theme/app_theme.dart';
 import '../../models/conversation.dart';
 import '../../notifier/chat_notifier.dart';
 import '../../notifier/inbox_notifier.dart';
@@ -76,15 +76,18 @@ class _ChatViewState extends ConsumerState<_ChatView> {
     final state = ref.watch(chatNotifierProvider(widget.args));
     final chatNotifier = ref.read(chatNotifierProvider(widget.args).notifier);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: isDark ? AppTheme.darkChatAreaBg : AppTheme.chatAreaBg,
       appBar: AppBar(
         titleSpacing: 0,
         title: Row(
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+              backgroundColor: cs.onSurface.withValues(alpha: 0.10),
               backgroundImage: widget.conversation.avatarUrl != null
                   ? CachedNetworkImageProvider(widget.conversation.avatarUrl!)
                   : null,
@@ -93,8 +96,8 @@ class _ChatViewState extends ConsumerState<_ChatView> {
                       widget.conversation.name.isNotEmpty
                           ? widget.conversation.name[0].toUpperCase()
                           : '?',
-                      style: const TextStyle(
-                        color: AppColors.primary,
+                      style: TextStyle(
+                        color: cs.onSurface.withValues(alpha: 0.55),
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
@@ -116,7 +119,7 @@ class _ChatViewState extends ConsumerState<_ChatView> {
                       'typing...',
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.primary,
+                        color: AppTheme.red,
                         fontStyle: FontStyle.italic,
                       ),
                     )
@@ -126,8 +129,8 @@ class _ChatViewState extends ConsumerState<_ChatView> {
                       style: TextStyle(
                         fontSize: 11,
                         color: widget.conversation.isOnline
-                            ? AppColors.success
-                            : AppColors.textSecondary,
+                            ? AppTheme.textingOnlineDot
+                            : cs.onSurface.withValues(alpha: 0.55),
                       ),
                     ),
                 ],

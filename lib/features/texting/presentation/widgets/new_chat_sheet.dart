@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/text_style.dart';
+import '../../../../shared/theme/app_theme.dart';
 import '../../models/following_user.dart';
 import '../../repository/texting_repository.dart';
 
@@ -133,9 +134,14 @@ class _NewChatSheetState extends State<NewChatSheet> {
               onChanged: (val) => setState(() => _query = val),
               decoration: InputDecoration(
                 hintText: 'Search people by name or username...',
-                prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                ),
                 filled: true,
-                fillColor: AppColors.background,
+                fillColor: Theme.of(context).brightness == Brightness.dark
+                    ? AppTheme.darkTextingInputBg
+                    : AppTheme.textingInputBg,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -160,11 +166,12 @@ class _NewChatSheetState extends State<NewChatSheet> {
                             const Divider(height: 1, indent: 68),
                         itemBuilder: (context, index) {
                           final user = filtered[index];
+                          final cs = Theme.of(context).colorScheme;
+
                           return ListTile(
                             leading: CircleAvatar(
                               radius: 22,
-                              backgroundColor:
-                                  AppColors.primary.withValues(alpha: 0.15),
+                              backgroundColor: cs.onSurface.withValues(alpha: 0.10),
                               backgroundImage: user.profilePicture != null
                                   ? CachedNetworkImageProvider(
                                       user.profilePicture!,
@@ -175,8 +182,8 @@ class _NewChatSheetState extends State<NewChatSheet> {
                                       user.displayName.isNotEmpty
                                           ? user.displayName[0].toUpperCase()
                                           : '?',
-                                      style: const TextStyle(
-                                        color: AppColors.primary,
+                                      style: TextStyle(
+                                        color: cs.onSurface.withValues(alpha: 0.55),
                                         fontWeight: FontWeight.bold,
                                       ),
                                     )
