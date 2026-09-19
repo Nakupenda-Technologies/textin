@@ -39,50 +39,15 @@ class _NewChatSheetState extends State<NewChatSheet> {
     final result = await widget.repository.fetchFollowingUsers('me');
     result.fold(
       (failure) {
-        // Fallback mock contacts for development/offline
         setState(() {
           _isLoading = false;
-          _users = [
-            const FollowingUser(
-              id: 'u1',
-              username: 'alexandra_m',
-              displayName: 'Alexandra Miller',
-              bio: 'Design lead & explorer',
-            ),
-            const FollowingUser(
-              id: 'u2',
-              username: 'dev_samuel',
-              displayName: 'Samuel O.',
-              bio: 'Flutter & backend engineer',
-            ),
-            const FollowingUser(
-              id: 'u3',
-              username: 'maya_lin',
-              displayName: 'Maya Lin',
-              bio: 'Musician & traveler',
-            ),
-          ];
+          _users = [];
         });
       },
       (list) {
         setState(() {
           _isLoading = false;
-          _users = list.isEmpty
-              ? [
-                  const FollowingUser(
-                    id: 'u1',
-                    username: 'alexandra_m',
-                    displayName: 'Alexandra Miller',
-                    bio: 'Design lead & explorer',
-                  ),
-                  const FollowingUser(
-                    id: 'u2',
-                    username: 'dev_samuel',
-                    displayName: 'Samuel O.',
-                    bio: 'Flutter & backend engineer',
-                  ),
-                ]
-              : list;
+          _users = list;
         });
       },
     );
@@ -156,7 +121,7 @@ class _NewChatSheetState extends State<NewChatSheet> {
                 : filtered.isEmpty
                     ? Center(
                         child: Text(
-                          'No users found',
+                          'No contacts found 👥',
                           style: AppTextStyle.bodySecondary,
                         ),
                       )
