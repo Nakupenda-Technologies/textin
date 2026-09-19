@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
+import '../../shared/theme/app_theme.dart';
 
 class AppColors {
   AppColors._();
 
-  // Primary palette
-  static const Color primary = Color(0xFF6366F1); // Indigo
-  static const Color primaryDark = Color(0xFF4F46E5);
-  static const Color primaryLight = Color(0xFF818CF8);
+  static const Color primary = AppTheme.red;
+  static const Color primaryDark = Color(0xFF8B0C1E);
+  static const Color primaryLight = AppTheme.redbg;
 
-  // Neutrals
-  static const Color background = Color(0xFFF9FAFB);
-  static const Color surface = Colors.white;
-  static const Color textPrimary = Color(0xFF111827);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color border = Color(0xFFE5E7EB);
+  static const Color background = AppTheme.bg;
+  static const Color surface = AppTheme.surface;
+  static const Color textPrimary = AppTheme.text;
+  static const Color textSecondary = AppTheme.textMuted;
+  static const Color border = AppTheme.border;
 
-  // Feedback
-  static const Color success = Color(0xFF10B981);
-  static const Color error = Color(0xFFEF4444);
+  static const Color success = AppTheme.textingOnlineDot;
+  static const Color error = AppTheme.red;
   static const Color warning = Color(0xFFF59E0B);
   static const Color info = Color(0xFF3B82F6);
 }
+

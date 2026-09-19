@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/env/env.dart';
-import '../core/theme/app_theme.dart';
 import '../router/app_router.dart';
+import '../shared/theme/app_theme.dart';
 
 class TextinApp extends StatelessWidget {
   const TextinApp({
@@ -22,8 +22,8 @@ class TextinApp extends StatelessWidget {
       child: MaterialApp(
         title: Env.appName,
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
         themeMode: ThemeMode.system,
         onGenerateRoute: AppRouter.onGenerateRoute,
         initialRoute: AppRouter.inbox,
