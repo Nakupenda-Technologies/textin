@@ -1,12 +1,48 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../models/message.dart';
-import '../../repository/texting_repository.dart';
-import '../../services/message_draft_service.dart';
-import '../../services/texting_socket_service.dart';
+import 'package:equatable/equatable.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/message.dart';
+import '../repository/texting_repository.dart';
+import '../services/message_draft_service.dart';
+import '../services/texting_socket_service.dart';
 import 'chat_state.dart';
+import 'inbox_notifier.dart';
 
-class ChatCubit extends Cubit<ChatState> {
-  ChatCubit({
+export 'chat_state.dart';
+
+class ChatArgs extends Equatable {
+  const ChatArgs({
+    required this.chatId,
+    required this.otherUserId,
+    required this.myUserId,
+    this.initialMessages = const [],
+  });
+
+  final String chatId;
+  final String otherUserId;
+  final String myUserId;
+  final List<Message> initialMessages;
+
+  @override
+  List<Object?> get props => [chatId, otherUserId, myUserId, initialMessages];
+}
+
+final chatNotifierProvider = StateNotifierProvider.autoDispose
+    .family<ChatNotifier, ChatState, ChatArgs>((ref, args) {
+  final repository = ref.watch(textingRepositoryProvider);
+  final socketService = ref.watch(textingSocketServiceProvider);
+
+  return ChatNotifier(
+    chatId: args.chatId,
+    otherUserId: args.otherUserId,
+    myUserId: args.myUserId,
+    repository: repository,
+    socketService: socketService,
+    initialMessages: args.initialMessages,
+  );
+});
+
+class ChatNotifier extends StateNotifier<ChatState> {
+  ChatNotifier({
     required this.chatId,
     required this.otherUserId,
     required this.myUserId,
@@ -26,7 +62,7 @@ class ChatCubit extends Cubit<ChatState> {
   void _init() {
     final draft = MessageDraftService.getDraft(chatId) ?? '';
     if (draft.isNotEmpty) {
-      emit(state.copyWith(draftText: draft));
+      state = state.copyWith(draftText: draft);
     }
 
     socketService.joinChat(chatId);
@@ -41,42 +77,42 @@ class ChatCubit extends Cubit<ChatState> {
     final msg = Message.fromJson(data, myUserId: myUserId);
     final exists = state.messages.any((m) => m.id == msg.id);
     if (!exists) {
-      emit(state.copyWith(messages: [...state.messages, msg]));
+      state = state.copyWith(messages: [...state.messages, msg]);
     }
   }
 
   void _handleTyping(String userId, bool isTyping) {
     if (userId == otherUserId) {
-      emit(state.copyWith(isOtherUserTyping: isTyping));
+      state = state.copyWith(isOtherUserTyping: isTyping);
     }
   }
 
   Future<void> loadMessages() async {
-    emit(state.copyWith(status: ChatStatus.loading));
+    state = state.copyWith(status: ChatStatus.loading);
 
     final result = await repository.fetchMessages(chatId, myUserId: myUserId);
     result.fold(
       (failure) {
         // If messages are already present (from conversation preview or mock), don't wipe
         if (state.messages.isEmpty) {
-          emit(state.copyWith(status: ChatStatus.error, errorMessage: failure.message));
+          state = state.copyWith(status: ChatStatus.error, errorMessage: failure.message);
         } else {
-          emit(state.copyWith(status: ChatStatus.loaded));
+          state = state.copyWith(status: ChatStatus.loaded);
         }
       },
       (msgs) {
-        emit(state.copyWith(status: ChatStatus.loaded, messages: msgs));
+        state = state.copyWith(status: ChatStatus.loaded, messages: msgs);
       },
     );
   }
 
   void setReplyingTo(Message? message) {
-    emit(state.copyWith(replyingTo: message, clearReplyingTo: message == null));
+    state = state.copyWith(replyingTo: message, clearReplyingTo: message == null);
   }
 
   void onDraftChanged(String text) {
     MessageDraftService.saveDraft(chatId, text);
-    emit(state.copyWith(draftText: text));
+    state = state.copyWith(draftText: text);
   }
 
   void emitTyping(bool isTyping) {
@@ -97,12 +133,10 @@ class ChatCubit extends Cubit<ChatState> {
       status: MessageStatus.pending,
     );
 
-    emit(
-      state.copyWith(
-        messages: [...state.messages, optimisticMsg],
-        clearReplyingTo: true,
-        draftText: '',
-      ),
+    state = state.copyWith(
+      messages: [...state.messages, optimisticMsg],
+      clearReplyingTo: true,
+      draftText: '',
     );
     MessageDraftService.clearDraft(chatId);
 
@@ -122,7 +156,7 @@ class ChatCubit extends Cubit<ChatState> {
           }
           return m;
         }).toList();
-        emit(state.copyWith(messages: updated, errorMessage: failure.message));
+        state = state.copyWith(messages: updated, errorMessage: failure.message);
       },
       (sentMsg) {
         // Replace optimistic msg with server msg
@@ -130,7 +164,7 @@ class ChatCubit extends Cubit<ChatState> {
           if (m.id == optimisticMsg.id) return sentMsg;
           return m;
         }).toList();
-        emit(state.copyWith(messages: updated));
+        state = state.copyWith(messages: updated);
       },
     );
   }
@@ -147,7 +181,7 @@ class ChatCubit extends Cubit<ChatState> {
       status: MessageStatus.pending,
     );
 
-    emit(state.copyWith(messages: [...state.messages, optimisticMsg]));
+    state = state.copyWith(messages: [...state.messages, optimisticMsg]);
 
     final result = await repository.sendVoiceMessage(
       chatId,
@@ -164,21 +198,21 @@ class ChatCubit extends Cubit<ChatState> {
           }
           return m;
         }).toList();
-        emit(state.copyWith(messages: updated, errorMessage: failure.message));
+        state = state.copyWith(messages: updated, errorMessage: failure.message);
       },
       (sentMsg) {
         final updated = state.messages.map((m) {
           if (m.id == optimisticMsg.id) return sentMsg;
           return m;
         }).toList();
-        emit(state.copyWith(messages: updated));
+        state = state.copyWith(messages: updated);
       },
     );
   }
 
   @override
-  Future<void> close() {
+  void dispose() {
     socketService.leaveChat(chatId);
-    return super.close();
+    super.dispose();
   }
 }

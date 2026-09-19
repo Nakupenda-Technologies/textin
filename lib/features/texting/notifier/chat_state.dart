@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../models/message.dart';
+import '../models/message.dart';
 
 enum ChatStatus { initial, loading, loaded, error }
 

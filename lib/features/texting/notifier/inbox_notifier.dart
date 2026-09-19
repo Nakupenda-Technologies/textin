@@ -1,12 +1,40 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../models/conversation.dart';
-import '../../models/message.dart';
-import '../../repository/texting_repository.dart';
-import '../../services/texting_socket_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/di/locator.dart';
+import '../models/conversation.dart';
+import '../models/message.dart';
+import '../repository/texting_repository.dart';
+import '../services/texting_socket_service.dart';
 import 'inbox_state.dart';
 
-class InboxCubit extends Cubit<InboxState> {
-  InboxCubit({
+export 'inbox_state.dart';
+
+final textingRepositoryProvider = Provider<TextingRepository>((ref) {
+  return locator<TextingRepository>();
+});
+
+final textingSocketServiceProvider = Provider<TextingSocketService>((ref) {
+  return locator<TextingSocketService>();
+});
+
+final myUserIdProvider = Provider<String>((ref) {
+  return 'me';
+});
+
+final inboxNotifierProvider =
+    StateNotifierProvider<InboxNotifier, InboxState>((ref) {
+  final repository = ref.watch(textingRepositoryProvider);
+  final socketService = ref.watch(textingSocketServiceProvider);
+  final myUserId = ref.watch(myUserIdProvider);
+
+  return InboxNotifier(
+    repository: repository,
+    socketService: socketService,
+    myUserId: myUserId,
+  );
+});
+
+class InboxNotifier extends StateNotifier<InboxState> {
+  InboxNotifier({
     required this.repository,
     required this.socketService,
     required this.myUserId,
@@ -41,7 +69,7 @@ class InboxCubit extends Cubit<InboxState> {
       return c;
     }).toList();
 
-    emit(state.copyWith(conversations: updatedList));
+    state = state.copyWith(conversations: updatedList);
   }
 
   void _handleSocketTyping(String userId, bool isTyping) {
@@ -51,11 +79,11 @@ class InboxCubit extends Cubit<InboxState> {
     } else {
       updatedTyping.remove(userId);
     }
-    emit(state.copyWith(typingUserIds: updatedTyping));
+    state = state.copyWith(typingUserIds: updatedTyping);
   }
 
   Future<void> loadConversations() async {
-    emit(state.copyWith(status: InboxStatus.loading));
+    state = state.copyWith(status: InboxStatus.loading);
 
     final result = await repository.fetchRegularChats(
       state.selectedFilterIndex,
@@ -66,39 +94,33 @@ class InboxCubit extends Cubit<InboxState> {
       (failure) {
         // If API fails or backend is offline, fall back to mock data for instant preview
         if (state.conversations.isEmpty) {
-          emit(
-            state.copyWith(
-              status: InboxStatus.loaded,
-              conversations: Conversation.mockData,
-              errorMessage: failure.message,
-            ),
+          state = state.copyWith(
+            status: InboxStatus.loaded,
+            conversations: Conversation.mockData,
+            errorMessage: failure.message,
           );
         } else {
-          emit(
-            state.copyWith(
-              status: InboxStatus.error,
-              errorMessage: failure.message,
-            ),
+          state = state.copyWith(
+            status: InboxStatus.error,
+            errorMessage: failure.message,
           );
         }
       },
       (chats) {
-        emit(
-          state.copyWith(
-            status: InboxStatus.loaded,
-            conversations: chats.isEmpty ? Conversation.mockData : chats,
-          ),
+        state = state.copyWith(
+          status: InboxStatus.loaded,
+          conversations: chats.isEmpty ? Conversation.mockData : chats,
         );
       },
     );
   }
 
   void setFilter(int index) {
-    emit(state.copyWith(selectedFilterIndex: index));
+    state = state.copyWith(selectedFilterIndex: index);
   }
 
   void search(String query) {
-    emit(state.copyWith(searchQuery: query));
+    state = state.copyWith(searchQuery: query);
   }
 
   Future<void> togglePin(String chatId) async {
@@ -109,7 +131,7 @@ class InboxCubit extends Cubit<InboxState> {
       if (c.id == chatId) return c.copyWith(isPinned: next);
       return c;
     }).toList();
-    emit(state.copyWith(conversations: updated));
+    state = state.copyWith(conversations: updated);
 
     await repository.togglePin(chatId, next);
   }
@@ -122,7 +144,7 @@ class InboxCubit extends Cubit<InboxState> {
       if (c.id == chatId) return c.copyWith(inSecretInbox: next);
       return c;
     }).toList();
-    emit(state.copyWith(conversations: updated));
+    state = state.copyWith(conversations: updated);
 
     await repository.toggleSecretInbox(chatId, next);
   }
@@ -135,14 +157,14 @@ class InboxCubit extends Cubit<InboxState> {
       }
       return c;
     }).toList();
-    emit(state.copyWith(conversations: updated));
+    state = state.copyWith(conversations: updated);
 
     await repository.markChatRead(chatId);
   }
 
   @override
-  Future<void> close() {
+  void dispose() {
     socketService.disconnect();
-    return super.close();
+    super.dispose();
   }
 }

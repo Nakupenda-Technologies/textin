@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../models/conversation.dart';
+import '../models/conversation.dart';
 
 enum SecretBoxStatus { locked, unlocked, settingUpPin }
 

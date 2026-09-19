@@ -1,10 +1,30 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../repository/texting_repository.dart';
+import '../repository/texting_repository.dart';
+import 'inbox_notifier.dart';
 import 'secret_box_state.dart';
 
-class SecretBoxCubit extends Cubit<SecretBoxState> {
-  SecretBoxCubit({
+export 'secret_box_state.dart';
+
+final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
+  return const FlutterSecureStorage();
+});
+
+final secretBoxNotifierProvider =
+    StateNotifierProvider.autoDispose<SecretBoxNotifier, SecretBoxState>((ref) {
+  final repository = ref.watch(textingRepositoryProvider);
+  final myUserId = ref.watch(myUserIdProvider);
+  final secureStorage = ref.watch(secureStorageProvider);
+
+  return SecretBoxNotifier(
+    repository: repository,
+    myUserId: myUserId,
+    secureStorage: secureStorage,
+  );
+});
+
+class SecretBoxNotifier extends StateNotifier<SecretBoxState> {
+  SecretBoxNotifier({
     required this.repository,
     required this.myUserId,
     FlutterSecureStorage? secureStorage,
@@ -21,24 +41,24 @@ class SecretBoxCubit extends Cubit<SecretBoxState> {
   Future<void> checkPinStatus() async {
     final storedPin = await _secureStorage.read(key: _pinKey);
     final hasPin = storedPin != null && storedPin.isNotEmpty;
-    emit(state.copyWith(hasPin: hasPin));
+    state = state.copyWith(hasPin: hasPin);
   }
 
   Future<bool> verifyPin(String enteredPin) async {
     final storedPin = await _secureStorage.read(key: _pinKey);
     if (storedPin == enteredPin) {
-      emit(state.copyWith(status: SecretBoxStatus.unlocked, errorMessage: null));
+      state = state.copyWith(status: SecretBoxStatus.unlocked, errorMessage: null);
       await loadSecretChats();
       return true;
     } else {
-      emit(state.copyWith(errorMessage: 'Incorrect PIN. Try again.'));
+      state = state.copyWith(errorMessage: 'Incorrect PIN. Try again.');
       return false;
     }
   }
 
   Future<void> setPin(String newPin) async {
     await _secureStorage.write(key: _pinKey, value: newPin);
-    emit(state.copyWith(hasPin: true, status: SecretBoxStatus.unlocked));
+    state = state.copyWith(hasPin: true, status: SecretBoxStatus.unlocked);
     await loadSecretChats();
   }
 
@@ -46,15 +66,15 @@ class SecretBoxCubit extends Cubit<SecretBoxState> {
     final result = await repository.fetchSecretChats(myUserId: myUserId);
     result.fold(
       (failure) {
-        emit(state.copyWith(errorMessage: failure.message));
+        state = state.copyWith(errorMessage: failure.message);
       },
       (chats) {
-        emit(state.copyWith(secretConversations: chats));
+        state = state.copyWith(secretConversations: chats);
       },
     );
   }
 
   void lock() {
-    emit(state.copyWith(status: SecretBoxStatus.locked));
+    state = state.copyWith(status: SecretBoxStatus.locked);
   }
 }

@@ -1,52 +1,59 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/di/locator.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/text_style.dart';
-import '../../cubit/chat/chat_cubit.dart';
-import '../../cubit/chat/chat_state.dart';
-import '../../cubit/inbox/inbox_cubit.dart';
 import '../../models/conversation.dart';
-import '../../repository/texting_repository.dart';
-import '../../services/texting_socket_service.dart';
+import '../../notifier/chat_notifier.dart';
+import '../../notifier/inbox_notifier.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/texting_composer.dart';
 
-class TextingChatScreen extends StatelessWidget {
+class TextingChatScreen extends ConsumerWidget {
   const TextingChatScreen({super.key, required this.conversation});
 
   final Conversation conversation;
 
   @override
-  Widget build(BuildContext context) {
-    final myUserId = context.read<InboxCubit>().myUserId;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final myUserId = ref.watch(myUserIdProvider);
+    final chatArgs = ChatArgs(
+      chatId: conversation.id,
+      otherUserId: conversation.id,
+      myUserId: myUserId,
+      initialMessages: conversation.messages,
+    );
 
-    return BlocProvider(
-      create: (_) => ChatCubit(
-        chatId: conversation.id,
-        otherUserId: conversation.id,
-        myUserId: myUserId,
-        repository: locator<TextingRepository>(),
-        socketService: locator<TextingSocketService>(),
-        initialMessages: conversation.messages,
-      )..loadMessages(),
-      child: _ChatView(conversation: conversation),
+    return _ChatView(
+      conversation: conversation,
+      args: chatArgs,
     );
   }
 }
 
-class _ChatView extends StatefulWidget {
-  const _ChatView({required this.conversation});
+class _ChatView extends ConsumerStatefulWidget {
+  const _ChatView({
+    required this.conversation,
+    required this.args,
+  });
 
   final Conversation conversation;
+  final ChatArgs args;
 
   @override
-  State<_ChatView> createState() => _ChatViewState();
+  ConsumerState<_ChatView> createState() => _ChatViewState();
 }
 
-class _ChatViewState extends State<_ChatView> {
+class _ChatViewState extends ConsumerState<_ChatView> {
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(chatNotifierProvider(widget.args).notifier).loadMessages();
+    });
+  }
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
@@ -60,6 +67,15 @@ class _ChatViewState extends State<_ChatView> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<ChatState>(chatNotifierProvider(widget.args), (previous, next) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToBottom();
+      });
+    });
+
+    final state = ref.watch(chatNotifierProvider(widget.args));
+    final chatNotifier = ref.read(chatNotifierProvider(widget.args).notifier);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -95,29 +111,25 @@ class _ChatViewState extends State<_ChatView> {
                     style: AppTextStyle.heading3.copyWith(fontSize: 16),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  BlocBuilder<ChatCubit, ChatState>(
-                    builder: (context, state) {
-                      if (state.isOtherUserTyping) {
-                        return const Text(
-                          'typing...',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.primary,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        );
-                      }
-                      return Text(
-                        widget.conversation.isOnline ? 'Online' : 'Offline',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: widget.conversation.isOnline
-                              ? AppColors.success
-                              : AppColors.textSecondary,
-                        ),
-                      );
-                    },
-                  ),
+                  if (state.isOtherUserTyping)
+                    const Text(
+                      'typing...',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.primary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    )
+                  else
+                    Text(
+                      widget.conversation.isOnline ? 'Online' : 'Offline',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: widget.conversation.isOnline
+                            ? AppColors.success
+                            : AppColors.textSecondary,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -149,13 +161,8 @@ class _ChatViewState extends State<_ChatView> {
       body: Column(
         children: [
           Expanded(
-            child: BlocConsumer<ChatCubit, ChatState>(
-              listener: (context, state) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _scrollToBottom();
-                });
-              },
-              builder: (context, state) {
+            child: Builder(
+              builder: (context) {
                 if (state.status == ChatStatus.loading && state.messages.isEmpty) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -169,7 +176,7 @@ class _ChatViewState extends State<_ChatView> {
                     return MessageBubble(
                       message: msg,
                       onReply: () {
-                        context.read<ChatCubit>().setReplyingTo(msg);
+                        chatNotifier.setReplyingTo(msg);
                       },
                     );
                   },
@@ -177,23 +184,14 @@ class _ChatViewState extends State<_ChatView> {
               },
             ),
           ),
-          BlocBuilder<ChatCubit, ChatState>(
-            builder: (context, state) {
-              return TextingComposer(
-                initialDraft: state.draftText,
-                replyingTo: state.replyingTo,
-                onCancelReply: () =>
-                    context.read<ChatCubit>().setReplyingTo(null),
-                onSendText: (text) =>
-                    context.read<ChatCubit>().sendText(text),
-                onSendImage: (path) =>
-                    context.read<ChatCubit>().sendText('[Image attached]'),
-                onSendVoice: (path, dur) =>
-                    context.read<ChatCubit>().sendVoiceNote(path, dur),
-                onTyping: (isTyping) =>
-                    context.read<ChatCubit>().emitTyping(isTyping),
-              );
-            },
+          TextingComposer(
+            initialDraft: state.draftText,
+            replyingTo: state.replyingTo,
+            onCancelReply: () => chatNotifier.setReplyingTo(null),
+            onSendText: (text) => chatNotifier.sendText(text),
+            onSendImage: (path) => chatNotifier.sendText('[Image attached]'),
+            onSendVoice: (path, dur) => chatNotifier.sendVoiceNote(path, dur),
+            onTyping: (isTyping) => chatNotifier.emitTyping(isTyping),
           ),
         ],
       ),

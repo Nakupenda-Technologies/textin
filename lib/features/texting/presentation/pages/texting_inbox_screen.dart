@@ -1,25 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/env/env.dart';
 import '../../../../core/di/locator.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/text_style.dart';
-import '../../cubit/inbox/inbox_cubit.dart';
-import '../../cubit/inbox/inbox_state.dart';
+import '../../notifier/inbox_notifier.dart';
 import '../../repository/texting_repository.dart';
 import '../widgets/conversation_tile.dart';
 import '../widgets/new_chat_sheet.dart';
 import 'secret_box_pin_screen.dart';
 import 'texting_chat_screen.dart';
 
-class TextingInboxScreen extends StatefulWidget {
+class TextingInboxScreen extends ConsumerStatefulWidget {
   const TextingInboxScreen({super.key});
 
   @override
-  State<TextingInboxScreen> createState() => _TextingInboxScreenState();
+  ConsumerState<TextingInboxScreen> createState() => _TextingInboxScreenState();
 }
 
-class _TextingInboxScreenState extends State<TextingInboxScreen> {
+class _TextingInboxScreenState extends ConsumerState<TextingInboxScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
 
@@ -28,7 +27,9 @@ class _TextingInboxScreenState extends State<TextingInboxScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<InboxCubit>().loadConversations();
+    Future.microtask(() {
+      ref.read(inboxNotifierProvider.notifier).loadConversations();
+    });
   }
 
   @override
@@ -38,20 +39,20 @@ class _TextingInboxScreenState extends State<TextingInboxScreen> {
   }
 
   void _openNewChatModal() {
-    final cubit = context.read<InboxCubit>();
+    final myUserId = ref.read(myUserIdProvider);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => NewChatSheet(
         repository: locator<TextingRepository>(),
-        myUserId: cubit.myUserId,
+        myUserId: myUserId,
         onSelectUser: (user) async {
           final navigator = Navigator.of(context);
           final messenger = ScaffoldMessenger.of(context);
           final result = await locator<TextingRepository>().startOrGetChat(
             otherUserId: user.id,
-            myUserId: cubit.myUserId,
+            myUserId: myUserId,
           );
           result.fold(
             (failure) {
@@ -81,6 +82,8 @@ class _TextingInboxScreenState extends State<TextingInboxScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(inboxNotifierProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -93,7 +96,8 @@ class _TextingInboxScreenState extends State<TextingInboxScreen> {
                   hintText: 'Search conversations...',
                   border: InputBorder.none,
                 ),
-                onChanged: (q) => context.read<InboxCubit>().search(q),
+                onChanged: (q) =>
+                    ref.read(inboxNotifierProvider.notifier).search(q),
               )
             : Row(
                 children: [
@@ -124,7 +128,7 @@ class _TextingInboxScreenState extends State<TextingInboxScreen> {
                 _isSearching = !_isSearching;
                 if (!_isSearching) {
                   _searchController.clear();
-                  context.read<InboxCubit>().search('');
+                  ref.read(inboxNotifierProvider.notifier).search('');
                 }
               });
             },
@@ -138,10 +142,10 @@ class _TextingInboxScreenState extends State<TextingInboxScreen> {
       ),
       body: Column(
         children: [
-          _buildFilterChips(),
+          _buildFilterChips(state),
           Expanded(
-            child: BlocBuilder<InboxCubit, InboxState>(
-              builder: (context, state) {
+            child: Builder(
+              builder: (context) {
                 if (state.status == InboxStatus.loading &&
                     state.conversations.isEmpty) {
                   return const Center(child: CircularProgressIndicator());
@@ -176,7 +180,8 @@ class _TextingInboxScreenState extends State<TextingInboxScreen> {
                 }
 
                 return RefreshIndicator(
-                  onRefresh: () => context.read<InboxCubit>().loadConversations(),
+                  onRefresh: () =>
+                      ref.read(inboxNotifierProvider.notifier).loadConversations(),
                   child: ListView.separated(
                     itemCount: displayed.length,
                     separatorBuilder: (_, _) => const Divider(
@@ -189,7 +194,6 @@ class _TextingInboxScreenState extends State<TextingInboxScreen> {
                       return ConversationTile(
                         conversation: conversation,
                         onTap: () {
-                          final inboxCubit = context.read<InboxCubit>();
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -198,16 +202,20 @@ class _TextingInboxScreenState extends State<TextingInboxScreen> {
                               ),
                             ),
                           ).then((_) {
-                            inboxCubit.loadConversations();
+                            ref
+                                .read(inboxNotifierProvider.notifier)
+                                .loadConversations();
                           });
                         },
-                        onTogglePin: () =>
-                            context.read<InboxCubit>().togglePin(conversation.id),
-                        onToggleSecret: () => context
-                            .read<InboxCubit>()
+                        onTogglePin: () => ref
+                            .read(inboxNotifierProvider.notifier)
+                            .togglePin(conversation.id),
+                        onToggleSecret: () => ref
+                            .read(inboxNotifierProvider.notifier)
                             .toggleSecretInbox(conversation.id),
-                        onMarkRead: () =>
-                            context.read<InboxCubit>().markRead(conversation.id),
+                        onMarkRead: () => ref
+                            .read(inboxNotifierProvider.notifier)
+                            .markRead(conversation.id),
                       );
                     },
                   ),
@@ -226,75 +234,69 @@ class _TextingInboxScreenState extends State<TextingInboxScreen> {
     );
   }
 
-  Widget _buildFilterChips() {
-    return BlocBuilder<InboxCubit, InboxState>(
-      buildWhen: (prev, curr) =>
-          prev.selectedFilterIndex != curr.selectedFilterIndex ||
-          prev.totalUnreadCount != curr.totalUnreadCount,
-      builder: (context, state) {
-        return Container(
-          height: 48,
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            scrollDirection: Axis.horizontal,
-            itemCount: _filters.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final isSelected = state.selectedFilterIndex == index;
-              final label = _filters[index];
+  Widget _buildFilterChips(InboxState state) {
+    return Container(
+      height: 48,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        itemCount: _filters.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final isSelected = state.selectedFilterIndex == index;
+          final label = _filters[index];
 
-              return FilterChip(
-                label: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(label),
-                    if (index == 1 && state.totalUnreadCount > 0) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected ? Colors.white : AppColors.primary,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          state.totalUnreadCount.toString(),
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: isSelected
-                                ? AppColors.primary
-                                : Colors.white,
-                          ),
-                        ),
+          return FilterChip(
+            label: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(label),
+                if (index == 1 && state.totalUnreadCount > 0) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.white : AppColors.primary,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      state.totalUnreadCount.toString(),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected
+                            ? AppColors.primary
+                            : Colors.white,
                       ),
-                    ],
-                  ],
-                ),
-                selected: isSelected,
-                selectedColor: AppColors.primary,
-                backgroundColor: Colors.white,
-                labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.textSecondary,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 13,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(
-                    color: isSelected ? AppColors.primary : AppColors.border,
+                    ),
                   ),
-                ),
-                showCheckmark: false,
-                onSelected: (_) => context.read<InboxCubit>().setFilter(index),
-              );
-            },
-          ),
-        );
-      },
+                ],
+              ],
+            ),
+            selected: isSelected,
+            selectedColor: AppColors.primary,
+            backgroundColor: Colors.white,
+            labelStyle: TextStyle(
+              color: isSelected ? Colors.white : AppColors.textSecondary,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              fontSize: 13,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(
+                color: isSelected ? AppColors.primary : AppColors.border,
+              ),
+            ),
+            showCheckmark: false,
+            onSelected: (_) =>
+                ref.read(inboxNotifierProvider.notifier).setFilter(index),
+          );
+        },
+      ),
     );
   }
 }
