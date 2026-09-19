@@ -1,17 +1,16 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:textin/core/errors/failure.dart';
-import 'package:textin/features/texting/cubit/inbox/inbox_cubit.dart';
-import 'package:textin/features/texting/cubit/inbox/inbox_state.dart';
 import 'package:textin/features/texting/models/api/chat_streak.dart';
 import 'package:textin/features/texting/models/conversation.dart';
 import 'package:textin/features/texting/models/following_user.dart';
 import 'package:textin/features/texting/models/message.dart';
+import 'package:textin/features/texting/notifier/inbox_notifier.dart';
 import 'package:textin/features/texting/repository/texting_repository.dart';
 import 'package:textin/features/texting/services/texting_socket_service.dart';
 import 'package:textin/services/local_storage_service.dart';
 import 'package:textin/services/websocket_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class MockTextingRepository implements TextingRepository {
   @override
@@ -133,8 +132,8 @@ class MockTextingRepository implements TextingRepository {
 }
 
 void main() {
-  group('InboxCubit tests', () {
-    late InboxCubit cubit;
+  group('InboxNotifier tests', () {
+    late InboxNotifier notifier;
     late MockTextingRepository repository;
     late TextingSocketService socketService;
 
@@ -143,7 +142,7 @@ void main() {
       await LocalStorageService.init();
       repository = MockTextingRepository();
       socketService = TextingSocketService(WebSocketService());
-      cubit = InboxCubit(
+      notifier = InboxNotifier(
         repository: repository,
         socketService: socketService,
         myUserId: 'me',
@@ -151,32 +150,32 @@ void main() {
     });
 
     tearDown(() {
-      cubit.close();
+      notifier.dispose();
     });
 
     test('initial state is correct', () {
-      expect(cubit.state.status, InboxStatus.initial);
-      expect(cubit.state.conversations, isEmpty);
-      expect(cubit.state.selectedFilterIndex, 0);
+      expect(notifier.state.status, InboxStatus.initial);
+      expect(notifier.state.conversations, isEmpty);
+      expect(notifier.state.selectedFilterIndex, 0);
     });
 
     test('loadConversations populates conversations', () async {
-      await cubit.loadConversations();
-      expect(cubit.state.status, InboxStatus.loaded);
-      expect(cubit.state.conversations, isNotEmpty);
-      expect(cubit.state.displayedConversations, isNotEmpty);
+      await notifier.loadConversations();
+      expect(notifier.state.status, InboxStatus.loaded);
+      expect(notifier.state.conversations, isNotEmpty);
+      expect(notifier.state.displayedConversations, isNotEmpty);
     });
 
     test('filter and search updates state properly', () async {
-      await cubit.loadConversations();
+      await notifier.loadConversations();
 
-      cubit.setFilter(1);
-      expect(cubit.state.selectedFilterIndex, 1);
+      notifier.setFilter(1);
+      expect(notifier.state.selectedFilterIndex, 1);
 
-      cubit.search('Thomas');
-      expect(cubit.state.searchQuery, 'Thomas');
+      notifier.search('Thomas');
+      expect(notifier.state.searchQuery, 'Thomas');
       expect(
-        cubit.state.displayedConversations.every(
+        notifier.state.displayedConversations.every(
           (c) => c.name.contains('Thomas'),
         ),
         isTrue,
@@ -184,13 +183,13 @@ void main() {
     });
 
     test('togglePin toggles conversation isPinned flag', () async {
-      await cubit.loadConversations();
-      final firstChat = cubit.state.conversations.first;
+      await notifier.loadConversations();
+      final firstChat = notifier.state.conversations.first;
       final initialPinned = firstChat.isPinned;
 
-      await cubit.togglePin(firstChat.id);
+      await notifier.togglePin(firstChat.id);
       final updatedChat =
-          cubit.state.conversations.firstWhere((c) => c.id == firstChat.id);
+          notifier.state.conversations.firstWhere((c) => c.id == firstChat.id);
       expect(updatedChat.isPinned, !initialPinned);
     });
   });

@@ -1,9 +1,8 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:textin/core/errors/failure.dart';
-import 'package:textin/features/home/cubit/home_cubit.dart';
-import 'package:textin/features/home/cubit/home_state.dart';
 import 'package:textin/features/home/models/user_profile.dart';
+import 'package:textin/features/home/notifier/home_notifier.dart';
 import 'package:textin/features/home/repository/home_repository.dart';
 
 class MockSuccessHomeRepository implements HomeRepository {
@@ -27,15 +26,15 @@ class MockFailureHomeRepository implements HomeRepository {
 }
 
 void main() {
-  group('HomeCubit tests', () {
+  group('HomeNotifier tests', () {
     test('initial state is HomeInitial', () {
-      final cubit = HomeCubit(repository: MockSuccessHomeRepository());
-      expect(cubit.state, isA<HomeInitial>());
-      cubit.close();
+      final notifier = HomeNotifier(repository: MockSuccessHomeRepository());
+      expect(notifier.state, isA<HomeInitial>());
+      notifier.dispose();
     });
 
     test('emits [HomeLoading, HomeLoaded] on successful fetch', () async {
-      final cubit = HomeCubit(repository: MockSuccessHomeRepository());
+      final notifier = HomeNotifier(repository: MockSuccessHomeRepository());
       final expected = [
         isA<HomeLoading>(),
         isA<HomeLoaded>().having(
@@ -45,13 +44,13 @@ void main() {
         ),
       ];
 
-      expectLater(cubit.stream, emitsInOrder(expected));
-      await cubit.loadProfile();
-      cubit.close();
+      expectLater(notifier.stream, emitsInOrder(expected));
+      await notifier.loadProfile();
+      notifier.dispose();
     });
 
     test('emits [HomeLoading, HomeError] on failed fetch', () async {
-      final cubit = HomeCubit(repository: MockFailureHomeRepository());
+      final notifier = HomeNotifier(repository: MockFailureHomeRepository());
       final expected = [
         isA<HomeLoading>(),
         isA<HomeError>().having(
@@ -61,9 +60,9 @@ void main() {
         ),
       ];
 
-      expectLater(cubit.stream, emitsInOrder(expected));
-      await cubit.loadProfile();
-      cubit.close();
+      expectLater(notifier.stream, emitsInOrder(expected));
+      await notifier.loadProfile();
+      notifier.dispose();
     });
   });
 }
