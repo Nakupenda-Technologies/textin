@@ -126,7 +126,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
           errorText: state.errorFor(RegistrationField.firstName),
           onChanged: (_) => notifier.clearError(RegistrationField.firstName),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         AppTextField(
           label: 'Last Name',
           hintText: 'i.e. Lean',
@@ -137,7 +137,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
           errorText: state.errorFor(RegistrationField.lastName),
           onChanged: (_) => notifier.clearError(RegistrationField.lastName),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         AppTextField(
           label: 'Email',
           hintText: 'i.e. slim@gmail.com',
@@ -148,7 +148,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
           errorText: state.errorFor(RegistrationField.email),
           onChanged: (_) => notifier.clearError(RegistrationField.email),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         AppTextField(
           label: 'Username',
           hintText: 'i.e. slimboogie',
@@ -164,7 +164,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
               : UsernameStatusIcon(status: state.usernameStatus),
           onChanged: notifier.onUsernameChanged,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         AppTextField(
           label: 'Referral Code (Optional)',
           hintText: 'i.e. beynd123',
@@ -177,7 +177,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
             if (_isComplete) _submit();
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         Text.rich(
           TextSpan(
             text: 'By signing up, you agree to the ',

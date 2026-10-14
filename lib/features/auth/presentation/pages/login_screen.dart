@@ -100,7 +100,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Column(
                   children: [
                     AppTextField(
-                      label: 'Email or username',
+                      label: 'Email or Username',
                       hintText: 'i.e. slim | slim@gmail.com',
                       controller: _identifierController,
                       keyboardType: TextInputType.emailAddress,

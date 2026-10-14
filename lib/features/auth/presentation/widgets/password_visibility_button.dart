@@ -19,7 +19,7 @@ class PasswordVisibilityButton extends StatelessWidget {
         onPressed: onPressed,
         icon: Icon(
           isHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-          size: 20,
+          size: 18,
         ),
       ),
     );

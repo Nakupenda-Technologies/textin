@@ -78,7 +78,7 @@ class RegistrationScaffold extends StatelessWidget {
                         title,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 30,
+                          fontSize: 28,
                           fontWeight: FontWeight.w600,
                           height: 1.15,
                           color: isDark ? AppTheme.darkTitle : AppTheme.text,
@@ -95,7 +95,7 @@ class RegistrationScaffold extends StatelessWidget {
                           color: onSurface.withValues(alpha: 0.7),
                         ),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
                       ...children,
                     ],
                   ),
@@ -134,7 +134,7 @@ class _StepRing extends StatelessWidget {
       label: 'Step $step of ${RegistrationScaffold.totalSteps}',
       excludeSemantics: true,
       child: SizedBox.square(
-        dimension: 36,
+        dimension: 32,
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -144,7 +144,7 @@ class _StepRing extends StatelessWidget {
                 duration: const Duration(milliseconds: 400),
                 builder: (context, value, _) => CircularProgressIndicator(
                   value: value,
-                  strokeWidth: 3,
+                  strokeWidth: 2.5,
                   strokeCap: StrokeCap.round,
                   color: AppTheme.textingSendBtn,
                   backgroundColor: isDark
@@ -156,7 +156,7 @@ class _StepRing extends StatelessWidget {
             Text(
               '$step',
               style: const TextStyle(
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textingSendBtn,
               ),
