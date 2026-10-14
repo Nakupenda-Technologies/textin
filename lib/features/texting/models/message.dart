@@ -83,7 +83,7 @@ class Message extends Equatable {
       type: MessageTypeX.fromString(json['type'] as String?),
       isMe: (json['senderId'] as String?) == myUserId,
       timestamp:
-          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.tryParse(json['createdAt'] as String? ?? '')?.toLocal() ??
           DateTime.now(),
       isRead: json['isRead'] as bool? ?? false,
       voiceDuration:

@@ -25,14 +25,14 @@ class ChatMessageApi extends Equatable {
       senderId: json['senderId'] as String? ?? '',
       type: json['type'] as String? ?? 'text',
       screenshotSensitive: json['screenshotSensitive'] as bool? ?? false,
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '')?.toLocal() ??
           DateTime.now(),
       content: json['content'] as String?,
       mediaUrl: json['mediaUrl'] as String?,
       voiceDurationSeconds: (json['voiceDurationSeconds'] as num?)?.toInt(),
       warpEffect: json['warpEffect'] as String?,
       expiresAt: json['expiresAt'] != null
-          ? DateTime.tryParse(json['expiresAt'].toString())
+          ? DateTime.tryParse(json['expiresAt'].toString())?.toLocal()
           : null,
       whisperTtlSeconds: (json['whisperTtlSeconds'] as num?)?.toInt(),
       ephemeralTtlSeconds: (json['ephemeralTtlSeconds'] as num?)?.toInt(),

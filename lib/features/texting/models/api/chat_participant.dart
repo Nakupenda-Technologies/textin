@@ -22,7 +22,7 @@ class ChatParticipant extends Equatable {
       isVerified: json['isVerified'] as bool? ?? false,
       profilePictureUrl: json['profilePictureUrl'] as String?,
       lastSeen: json['lastSeen'] != null
-          ? DateTime.tryParse(json['lastSeen'].toString())
+          ? DateTime.tryParse(json['lastSeen'].toString())?.toLocal()
           : null,
     );
   }

@@ -12,7 +12,7 @@ class ChatStreak extends Equatable {
       count: json['count'] as int? ?? 0,
       isActive: json['isActive'] as bool? ?? false,
       lastMessageAt: json['lastMessageAt'] != null
-          ? DateTime.tryParse(json['lastMessageAt'].toString())
+          ? DateTime.tryParse(json['lastMessageAt'].toString())?.toLocal()
           : null,
     );
   }
