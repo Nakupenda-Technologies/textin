@@ -1,5 +1,7 @@
 import 'package:get_it/get_it.dart';
 import '../../config/env/env.dart';
+import '../../features/auth/data_source/auth_remote_data_source.dart';
+import '../../features/auth/repository/auth_repository.dart';
 import '../../features/home/data_source/home_data_source.dart';
 import '../../features/home/repository/home_repository.dart';
 import '../../features/texting/data_source/texting_remote_data_source.dart';
@@ -35,6 +37,16 @@ Future<void> setupLocator() async {
       session: locator<SessionManager>(),
     ),
     instanceName: 'messaging',
+  );
+
+  locator.registerLazySingleton<AuthRemoteDataSource>(
+    () => AuthRemoteDataSourceImpl(locator<BaseApiClients>()),
+  );
+  locator.registerLazySingleton<AuthRepository>(
+    () => AuthRepository(
+      remote: locator<AuthRemoteDataSource>(),
+      session: locator<SessionStore>(),
+    ),
   );
 
   locator.registerLazySingleton<WebSocketService>(() => WebSocketService());

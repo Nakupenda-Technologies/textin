@@ -3,14 +3,26 @@ class Endpoints {
 
   // Auth
   static const String login = '/auth/login';
-  static const String register = '/auth/register';
   static const String refreshToken = '/auth/refresh';
   static const String logout = '/auth/logout';
   static const String profile = '/auth/profile';
+  static const String me = '/users/me';
+  static const String validateUsername = '/users/validate-username';
+  static const String currents = '/currents';
+
+  // Registration process
+  static const String processTrackerSetup = '/process-tracker/setup';
+  static String processTracker(String processId) =>
+      '/process-tracker/$processId';
+  static String processTrackerStep(String processId) =>
+      '/process-tracker/$processId/step';
+  static String processTrackerComplete(String processId) =>
+      '/process-tracker/$processId/complete';
 
   // Messaging / Chats
   static const String startOrGetChat = '/messaging/chats';
-  static String chatMessages(String chatId) => '/messaging/chats/$chatId/messages';
+  static String chatMessages(String chatId) =>
+      '/messaging/chats/$chatId/messages';
   static String markChatRead(String chatId) => '/messaging/chats/$chatId/read';
   static String chatSecretInbox(String chatId) =>
       '/messaging/chats/$chatId/secret-inbox';
