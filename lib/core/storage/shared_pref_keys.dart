@@ -7,4 +7,5 @@ class SharedPrefKeys {
   static const String onboardingSeen = 'onboarding_seen';
   static const String cachedUser = 'cached_user';
   static const String registrationProcessId = 'registration_process_id';
+  static const String hasLaunched = 'has_launched';
 }

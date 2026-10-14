@@ -46,6 +46,17 @@ Future<void> mainCommon() async {
   }
 
   await setupLocator();
+
+  try {
+    await locator<SessionStore>().resetIfFreshInstall();
+  } catch (e, st) {
+    developer.log(
+      'SessionStore.resetIfFreshInstall failed: $e',
+      name: 'Textin',
+      stackTrace: st,
+    );
+  }
+
   await locator<SessionStore>().load();
 
   runApp(const TextinApp(observers: [AppProviderObserver()]));

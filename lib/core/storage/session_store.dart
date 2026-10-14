@@ -3,6 +3,9 @@ import 'dart:math';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'shared_pref_keys.dart';
+import 'shared_preferences_store.dart';
+
 class AuthTokens {
   const AuthTokens({
     required this.accessToken,
@@ -91,6 +94,16 @@ class SessionStore {
       );
       _tokens = null;
     }
+  }
+
+  // The iOS Keychain outlives app uninstalls, so a reinstall would otherwise
+  // restore the previous install's session.
+  Future<void> resetIfFreshInstall() async {
+    if (SharedPreferencesStore.getBool(SharedPrefKeys.hasLaunched) ?? false) {
+      return;
+    }
+    await SharedPreferencesStore.setBool(SharedPrefKeys.hasLaunched, true);
+    await _storage.deleteAll();
   }
 
   Future<void> save(AuthTokens tokens) async {
