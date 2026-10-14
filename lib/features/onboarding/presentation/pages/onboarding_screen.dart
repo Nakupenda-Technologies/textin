@@ -52,7 +52,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _finish() async {
     await SharedPreferencesStore.setBool(SharedPrefKeys.onboardingSeen, true);
     if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed(AppRouter.inbox);
+    Navigator.of(context).pushReplacementNamed(AppRouter.login);
   }
 
   void _next() {
