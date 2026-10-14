@@ -124,14 +124,21 @@ void main() {
       referralCode: '  ',
     );
 
-    test('start lands on the basic info step', () async {
-      final outcome = await notifier.start();
+    test('a new sign up starts a fresh process on the first step', () async {
+      SharedPreferences.setMockInitialValues({});
+      notifier.beginNewSignUp();
+
+      final outcome = await submitValidBasics();
 
       expect(outcome, isA<RegistrationContinues>());
       expect(
         (outcome as RegistrationContinues).nextStep,
-        RegistrationStep.basicInfo,
+        RegistrationStep.passwordSetup,
       );
+      expect(remote.submittedSteps.map((s) => s.step), [
+        RegistrationStep.accountType,
+        RegistrationStep.basicInfo,
+      ]);
     });
 
     test('validates every basic info field at once', () async {
@@ -168,7 +175,8 @@ void main() {
     });
 
     test('puts server conflicts under the matching field', () async {
-      await notifier.start();
+      notifier.beginNewSignUp();
+      remote.failingStep = RegistrationStep.basicInfo;
       remote.stepFailure = const ServerFailure(
         'Email already in use',
         statusCode: 409,
@@ -185,7 +193,8 @@ void main() {
     });
 
     test('shows other server failures as a toast', () async {
-      await notifier.start();
+      notifier.beginNewSignUp();
+      remote.failingStep = RegistrationStep.basicInfo;
       remote.stepFailure = const ServerFailure('', statusCode: 503);
 
       await submitValidBasics();
@@ -197,7 +206,7 @@ void main() {
     });
 
     test('sends a trimmed payload without an empty referral code', () async {
-      await notifier.start();
+      notifier.beginNewSignUp();
 
       final outcome = await submitValidBasics();
 
@@ -240,7 +249,8 @@ void main() {
       remote.currents = [
         for (var i = 0; i < 7; i++) CurrentItem(id: 'c$i', name: 'Current $i'),
       ];
-      await notifier.start();
+      notifier.beginNewSignUp();
+      await submitValidBasics();
       await notifier.loadCurrents();
 
       final empty = await notifier.completeRegistration();

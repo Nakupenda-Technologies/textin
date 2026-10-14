@@ -9,6 +9,7 @@ class FakeAuthRemoteDataSource implements AuthRemoteDataSource {
   Failure? loginFailure;
   Failure? fetchMeFailure;
   Failure? stepFailure;
+  RegistrationStep? failingStep;
   bool usernameAvailable = true;
   String processStatus = 'in_progress';
   String processFlowKey = 'onboarding_personal';
@@ -82,7 +83,10 @@ class FakeAuthRemoteDataSource implements AuthRemoteDataSource {
     RegistrationStep step,
     Map<String, dynamic> payload,
   ) async {
-    if (stepFailure case final failure?) throw failure;
+    if (stepFailure case final failure?
+        when failingStep == null || failingStep == step) {
+      throw failure;
+    }
     submittedSteps.add((step: step, payload: payload));
     final next = _nextStep[step];
     return (

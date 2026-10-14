@@ -118,6 +118,7 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
 
   Timer? _usernameTimer;
   String? _latestUsername;
+  bool _needsNewProcess = false;
 
   @override
   void dispose() {
@@ -130,12 +131,11 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
     state = state.copyWith(errors: Map.of(state.errors)..remove(field));
   }
 
-  Future<RegistrationOutcome> start() async {
-    state = const RegistrationState(isSubmitting: true);
-    return _finishStep(
-      await _repository.startRegistration(),
-      failureTitle: "Couldn't start sign up",
-    );
+  void beginNewSignUp() {
+    _usernameTimer?.cancel();
+    _latestUsername = null;
+    _needsNewProcess = true;
+    state = const RegistrationState();
   }
 
   void onUsernameChanged(String value) {
@@ -195,6 +195,14 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
               : null)),
     };
     if (!_beginSubmit(errors)) return const RegistrationFailed();
+
+    if (_needsNewProcess || _repository.pendingProcessId == null) {
+      final started = await _repository.startRegistration();
+      if (started.isLeft()) {
+        return _finishStep(started, failureTitle: "Couldn't start sign up");
+      }
+      _needsNewProcess = false;
+    }
 
     final referral = referralCode.trim();
     return _finishStep(
