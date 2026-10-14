@@ -12,6 +12,7 @@ class TextingComposer extends StatefulWidget {
     required this.onSendImage,
     required this.onSendVoice,
     required this.onTyping,
+    required this.onOpenAura,
     this.replyingTo,
     this.onCancelReply,
     this.initialDraft = '',
@@ -21,6 +22,7 @@ class TextingComposer extends StatefulWidget {
   final ValueChanged<String> onSendImage;
   final Function(String path, int durationSec) onSendVoice;
   final ValueChanged<bool> onTyping;
+  final VoidCallback onOpenAura;
   final Message? replyingTo;
   final VoidCallback? onCancelReply;
   final String initialDraft;
@@ -116,6 +118,15 @@ class _TextingComposerState extends State<TextingComposer> {
                               AppTheme.textingTimestamp,
                               BlendMode.srcIn,
                             ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _CircleButton(
+                    onTap: widget.onOpenAura,
+                    child: SvgPicture.asset(
+                      'assets/svgs/aura_active_icon.svg',
+                      width: 20,
+                      height: 20,
                     ),
                   ),
                 ],
