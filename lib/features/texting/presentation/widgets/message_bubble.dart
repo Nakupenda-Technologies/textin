@@ -45,7 +45,8 @@ class _MessageBubbleState extends State<MessageBubble> {
       _player!.playerStateStream.listen((state) {
         if (mounted) {
           setState(() {
-            _isPlaying = state.playing &&
+            _isPlaying =
+                state.playing &&
                 state.processingState != ProcessingState.completed;
             if (state.processingState == ProcessingState.completed) {
               _position = Duration.zero;
@@ -97,8 +98,9 @@ class _MessageBubbleState extends State<MessageBubble> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         child: Column(
-          crossAxisAlignment:
-              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: isMe
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           children: [
             Container(
               constraints: BoxConstraints(
@@ -118,15 +120,16 @@ class _MessageBubbleState extends State<MessageBubble> {
                   ? const EdgeInsets.fromLTRB(8, 8, 16, 8)
                   : const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               child: Column(
-                crossAxisAlignment:
-                    isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                crossAxisAlignment: isMe
+                    ? CrossAxisAlignment.end
+                    : CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (widget.message.type == MessageType.image &&
                       widget.message.mediaUrl != null)
                     _buildImageMessage(widget.message.mediaUrl!),
                   if (widget.message.type == MessageType.voice)
-                    _buildVoiceMessage(fg, bubbleBg),
+                    _buildVoiceMessage(fg, isMe ? bubbleBg : Colors.white),
                   if (widget.message.type != MessageType.voice &&
                       widget.message.content.isNotEmpty)
                     Text(
@@ -187,7 +190,7 @@ class _MessageBubbleState extends State<MessageBubble> {
     );
   }
 
-  Widget _buildVoiceMessage(Color fg, Color bubbleBg) {
+  Widget _buildVoiceMessage(Color fg, Color iconColor) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -200,7 +203,7 @@ class _MessageBubbleState extends State<MessageBubble> {
             child: Icon(
               _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
               size: 20,
-              color: bubbleBg,
+              color: iconColor,
             ),
           ),
         ),
@@ -232,11 +235,7 @@ class _MessageBubbleState extends State<MessageBubble> {
           color: AppTheme.textingTimestamp,
         );
       case MessageStatus.failed:
-        return const Icon(
-          Icons.error_outline,
-          size: 12,
-          color: AppTheme.red,
-        );
+        return const Icon(Icons.error_outline, size: 12, color: AppTheme.red);
       case MessageStatus.sent:
         return Icon(
           widget.message.isRead ? Icons.done_all : Icons.done,
