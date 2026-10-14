@@ -5,6 +5,7 @@ import '../../../../core/di/locator.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../auth/notifier/session_notifier.dart';
 import '../../notifier/inbox_notifier.dart';
 import '../../repository/texting_repository.dart';
 import '../widgets/conversation_tile.dart';
@@ -48,6 +49,7 @@ class _TextingInboxScreenState extends ConsumerState<TextingInboxScreen> {
       builder: (ctx) => NewChatSheet(
         repository: locator<TextingRepository>(),
         myUserId: myUserId,
+        myUsername: ref.read(currentUserProvider)?.username,
         onSelectUser: (user) async {
           final navigator = Navigator.of(context);
           final messenger = ScaffoldMessenger.of(context);

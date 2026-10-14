@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/errors/error_message.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
@@ -11,11 +12,13 @@ class NewChatSheet extends StatefulWidget {
     super.key,
     required this.repository,
     required this.myUserId,
+    required this.myUsername,
     required this.onSelectUser,
   });
 
   final TextingRepository repository;
   final String myUserId;
+  final String? myUsername;
   final ValueChanged<FollowingUser> onSelectUser;
 
   @override
@@ -26,6 +29,7 @@ class _NewChatSheetState extends State<NewChatSheet> {
   final TextEditingController _searchCtrl = TextEditingController();
   List<FollowingUser> _users = [];
   bool _isLoading = false;
+  String? _loadError;
   String _query = '';
 
   @override
@@ -35,21 +39,30 @@ class _NewChatSheetState extends State<NewChatSheet> {
   }
 
   Future<void> _loadUsers() async {
-    setState(() => _isLoading = true);
-    final result = await widget.repository.fetchFollowingUsers('me');
+    final username = widget.myUsername;
+    if (username == null || username.isEmpty) {
+      setState(() {
+        _users = [];
+        _loadError = "We couldn't load your contacts. Sign out and sign in again.";
+      });
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+    final result = await widget.repository.fetchFollowingUsers(username);
+    if (!mounted) return;
     result.fold(
-      (failure) {
-        setState(() {
-          _isLoading = false;
-          _users = [];
-        });
-      },
-      (list) {
-        setState(() {
-          _isLoading = false;
-          _users = list;
-        });
-      },
+      (failure) => setState(() {
+        _isLoading = false;
+        _users = [];
+        _loadError = userMessage(failure);
+      }),
+      (list) => setState(() {
+        _isLoading = false;
+        _users = list;
+      }),
     );
   }
 
@@ -118,10 +131,31 @@ class _NewChatSheetState extends State<NewChatSheet> {
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
+                : _loadError != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _loadError!,
+                            textAlign: TextAlign.center,
+                            style: AppTextStyle.bodySecondary,
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: _loadUsers,
+                            child: const Text('Try again'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
                 : filtered.isEmpty
                     ? Center(
                         child: Text(
-                          'No contacts found 👥',
+                          'No contacts found',
                           style: AppTextStyle.bodySecondary,
                         ),
                       )
