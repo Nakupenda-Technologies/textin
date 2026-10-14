@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -133,9 +134,8 @@ class _MessageBubbleState extends State<MessageBubble> {
                       : CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (widget.message.type == MessageType.image &&
-                        widget.message.mediaUrl != null)
-                      _buildImageMessage(widget.message.mediaUrl!),
+                    if (widget.message.type == MessageType.image)
+                      _buildImageMessage(),
                     if (widget.message.type == MessageType.voice)
                       _buildVoiceMessage(fg, isMe ? bubbleBg : Colors.white),
                     if (widget.message.type != MessageType.voice &&
@@ -178,24 +178,37 @@ class _MessageBubbleState extends State<MessageBubble> {
     );
   }
 
-  Widget _buildImageMessage(String url) {
+  Widget _buildImageMessage() {
+    final url = widget.message.mediaUrl;
+    final localPath = widget.message.localMediaPath;
+    final brokenImage = Container(
+      height: 120,
+      color: Colors.black12,
+      child: const Icon(Icons.broken_image, color: Colors.grey),
+    );
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
-      child: CachedNetworkImage(
-        imageUrl: url,
-        placeholder: (ctx, _) => Container(
-          height: 180,
-          color: Colors.black12,
-          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      child: switch ((url, localPath)) {
+        (final String url, _) when url.isNotEmpty => CachedNetworkImage(
+          imageUrl: url,
+          placeholder: (ctx, _) => Container(
+            height: 180,
+            color: Colors.black12,
+            child: const Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+          errorWidget: (ctx, _, _) => brokenImage,
         ),
-        errorWidget: (ctx, _, _) => Container(
-          height: 120,
-          color: Colors.black12,
-          child: const Icon(Icons.broken_image, color: Colors.grey),
+        (_, final String path) => Image.file(
+          File(path),
+          errorBuilder: (ctx, _, _) => brokenImage,
         ),
-      ),
+        _ => brokenImage,
+      },
     );
   }
 
