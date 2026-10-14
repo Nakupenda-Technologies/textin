@@ -54,6 +54,11 @@ flutter:
     - assets/icons/
     - assets/svgs/
 
+  fonts:
+    - family: Urbanist
+      fonts:
+        - asset: assets/fonts/Urbanist.ttf
+
 flutter_launcher_icons:
   android: true
   ios: true
