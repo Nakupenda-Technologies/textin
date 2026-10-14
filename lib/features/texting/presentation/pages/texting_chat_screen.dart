@@ -7,7 +7,9 @@ import '../../../../shared/theme/app_theme.dart';
 import '../../models/conversation.dart';
 import '../../notifier/chat_notifier.dart';
 import '../../notifier/inbox_notifier.dart';
+import '../widgets/chat_mood_sheet.dart';
 import '../widgets/message_bubble.dart';
+import '../widgets/mood_palette.dart';
 import '../widgets/texting_composer.dart';
 
 class TextingChatScreen extends ConsumerWidget {
@@ -23,20 +25,15 @@ class TextingChatScreen extends ConsumerWidget {
       otherUserId: conversation.id,
       myUserId: myUserId,
       initialMessages: conversation.messages,
+      initialCustomization: conversation.customization,
     );
 
-    return _ChatView(
-      conversation: conversation,
-      args: chatArgs,
-    );
+    return _ChatView(conversation: conversation, args: chatArgs);
   }
 }
 
 class _ChatView extends ConsumerStatefulWidget {
-  const _ChatView({
-    required this.conversation,
-    required this.args,
-  });
+  const _ChatView({required this.conversation, required this.args});
 
   final Conversation conversation;
   final ChatArgs args;
@@ -83,6 +80,8 @@ class _ChatViewState extends ConsumerState<_ChatView> {
     final state = ref.watch(chatNotifierProvider(widget.args));
     final chatNotifier = ref.read(chatNotifierProvider(widget.args).notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final customization = state.customization;
+    final accent = MoodPalette.of(customization.mood).accent;
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkChatAreaBg : AppTheme.chatAreaBg,
@@ -93,52 +92,65 @@ class _ChatViewState extends ConsumerState<_ChatView> {
       body: Column(
         children: [
           Expanded(
-            child: Builder(
-              builder: (context) {
-                if (state.status == ChatStatus.loading &&
-                    state.messages.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  radius: 0.9,
+                  colors: [
+                    accent.withValues(alpha: customization.auraGlow * 0.35),
+                    accent.withValues(alpha: 0),
+                  ],
+                ),
+              ),
+              child: Builder(
+                builder: (context) {
+                  if (state.status == ChatStatus.loading &&
+                      state.messages.isEmpty) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                if (state.messages.isEmpty && !state.isOtherUserTyping) {
-                  return Center(
-                    child: Text(
-                      'No messages yet 💬',
-                      style: AppTextStyle.bodySecondary,
-                    ),
-                  );
-                }
-
-                final messages = state.messages;
-                return ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  itemCount:
-                      messages.length + (state.isOtherUserTyping ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == messages.length) {
-                      return const _TypingIndicator();
-                    }
-
-                    final msg = messages[index];
-                    final startsNewDay = index == 0 ||
-                        !DateUtils.isSameDay(
-                          messages[index - 1].timestamp,
-                          msg.timestamp,
-                        );
-
-                    return Column(
-                      children: [
-                        if (startsNewDay) _DayChip(date: msg.timestamp),
-                        MessageBubble(
-                          message: msg,
-                          onReply: () => chatNotifier.setReplyingTo(msg),
-                        ),
-                      ],
+                  if (state.messages.isEmpty && !state.isOtherUserTyping) {
+                    return Center(
+                      child: Text(
+                        'No messages yet 💬',
+                        style: AppTextStyle.bodySecondary,
+                      ),
                     );
-                  },
-                );
-              },
+                  }
+
+                  final messages = state.messages;
+                  return ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    itemCount:
+                        messages.length + (state.isOtherUserTyping ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == messages.length) {
+                        return const _TypingIndicator();
+                      }
+
+                      final msg = messages[index];
+                      final startsNewDay =
+                          index == 0 ||
+                          !DateUtils.isSameDay(
+                            messages[index - 1].timestamp,
+                            msg.timestamp,
+                          );
+
+                      return Column(
+                        children: [
+                          if (startsNewDay) _DayChip(date: msg.timestamp),
+                          MessageBubble(
+                            message: msg,
+                            customization: customization,
+                            onReply: () => chatNotifier.setReplyingTo(msg),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ),
           TextingComposer(
@@ -149,6 +161,11 @@ class _ChatViewState extends ConsumerState<_ChatView> {
             onSendImage: (path) => chatNotifier.sendText('[Image attached]'),
             onSendVoice: (path, dur) => chatNotifier.sendVoiceNote(path, dur),
             onTyping: (isTyping) => chatNotifier.emitTyping(isTyping),
+            onOpenAura: () => ChatMoodSheet.show(
+              context,
+              initial: customization,
+              onChanged: chatNotifier.updateCustomization,
+            ),
           ),
         ],
       ),
@@ -175,10 +192,10 @@ class _ChatHeader extends StatelessWidget implements PreferredSizeWidget {
     final ago = diff.inMinutes < 1
         ? 'just now'
         : diff.inMinutes < 60
-            ? '${diff.inMinutes}m ago'
-            : diff.inHours < 24
-                ? '${diff.inHours}h ago'
-                : '${diff.inDays}d ago';
+        ? '${diff.inMinutes}m ago'
+        : diff.inHours < 24
+        ? '${diff.inHours}h ago'
+        : '${diff.inDays}d ago';
     return 'Last Seen - $ago';
   }
 
@@ -252,8 +269,9 @@ class _ChatHeader extends StatelessWidget implements PreferredSizeWidget {
                         style: TextStyle(
                           fontSize: 10,
                           letterSpacing: -0.04,
-                          fontStyle:
-                              isTyping ? FontStyle.italic : FontStyle.normal,
+                          fontStyle: isTyping
+                              ? FontStyle.italic
+                              : FontStyle.normal,
                           color: isTyping
                               ? AppTheme.textingSentBubble
                               : AppTheme.iconColor,
