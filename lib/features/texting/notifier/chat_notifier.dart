@@ -94,10 +94,20 @@ class ChatNotifier extends StateNotifier<ChatState> {
     if (incomingChatId != chatId) return;
 
     final msg = Message.fromJson(data, myUserId: myUserId);
-    final exists = state.messages.any((m) => m.id == msg.id);
-    if (!exists) {
-      state = state.copyWith(messages: [...state.messages, msg]);
+    if (msg.id.isEmpty || state.messages.any((m) => m.id == msg.id)) return;
+
+    final pendingIndex = msg.isMe
+        ? state.messages.indexWhere(
+            (m) => m.status == MessageStatus.pending && m.content == msg.content,
+          )
+        : -1;
+    if (pendingIndex >= 0) {
+      final updated = [...state.messages]..[pendingIndex] = msg;
+      state = state.copyWith(messages: updated);
+      return;
     }
+
+    state = state.copyWith(messages: [...state.messages, msg]);
   }
 
   void _handleTyping(String userId, bool isTyping) {
@@ -186,14 +196,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         }).toList();
         state = state.copyWith(messages: updated, errorMessage: failure.message);
       },
-      (sentMsg) {
-        // Replace optimistic msg with server msg
-        final updated = state.messages.map((m) {
-          if (m.id == optimisticMsg.id) return sentMsg;
-          return m;
-        }).toList();
-        state = state.copyWith(messages: updated);
-      },
+      (sentMsg) => _confirmSent(optimisticMsg, sentMsg),
     );
   }
 
@@ -228,14 +231,24 @@ class ChatNotifier extends StateNotifier<ChatState> {
         }).toList();
         state = state.copyWith(messages: updated, errorMessage: failure.message);
       },
-      (sentMsg) {
-        final updated = state.messages.map((m) {
-          if (m.id == optimisticMsg.id) return sentMsg;
-          return m;
-        }).toList();
-        state = state.copyWith(messages: updated);
-      },
+      (sentMsg) => _confirmSent(optimisticMsg, sentMsg),
     );
+  }
+
+  void _confirmSent(Message optimistic, Message sent) {
+    if (!state.messages.any((m) => m.id == optimistic.id)) return;
+
+    final hasServerId = sent.id.isNotEmpty;
+    final confirmed = optimistic.copyWith(
+      id: hasServerId ? sent.id : null,
+      timestamp: hasServerId ? sent.timestamp : null,
+      status: MessageStatus.sent,
+    );
+    final updated = state.messages
+        .where((m) => m.id != confirmed.id || m.id == optimistic.id)
+        .map((m) => m.id == optimistic.id ? confirmed : m)
+        .toList();
+    state = state.copyWith(messages: updated);
   }
 
   @override
