@@ -322,6 +322,10 @@ class AppTheme {
   static const Color textingWaveformActive = Color(0xFFFFFFFF);
   static const Color textingWaveformInactive = Color(0xFF9E9E9E);
   static const Color textingActiveRedBorder = Color(0xFFFF7558);
+  static const Color textingTagProfessionalOutline = Color(0xFF06B6D4);
+  static const Color textingTagChillOutline = Color(0xFF9CA3AF);
+  static const Color textingTagExcitedOutline = Color(0xFFA855F7);
+  static const Color textingSectionLabel = Color(0xFFCCCCCC);
 
   // Dark-mode counterparts for texting tokens
   static const Color darkChatAreaBg = Color(0xFF0D1117);
