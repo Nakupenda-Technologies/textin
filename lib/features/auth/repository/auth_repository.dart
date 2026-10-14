@@ -66,6 +66,25 @@ class AuthRepository {
 
   Future<Either<Failure, AuthUser>> refreshUser() => _guard(_loadUser);
 
+  Future<Either<Failure, Unit>> requestPasswordReset(String email) =>
+      _guard(() async {
+        await _remote.requestPasswordReset(email);
+        return unit;
+      });
+
+  Future<Either<Failure, Unit>> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) => _guard(() async {
+    await _remote.resetPassword(
+      email: email,
+      code: code,
+      newPassword: newPassword,
+    );
+    return unit;
+  });
+
   Future<void> signOut() async {
     await _session.clear();
     await SharedPreferencesStore.remove(SharedPrefKeys.cachedUser);

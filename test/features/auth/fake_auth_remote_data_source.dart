@@ -9,6 +9,9 @@ class FakeAuthRemoteDataSource implements AuthRemoteDataSource {
   Failure? loginFailure;
   Failure? fetchMeFailure;
   Failure? stepFailure;
+  Failure? resetFailure;
+  final List<String> resetRequests = [];
+  ({String email, String code, String newPassword})? lastReset;
   RegistrationStep? failingStep;
   bool usernameAvailable = true;
   String processStatus = 'in_progress';
@@ -53,6 +56,22 @@ class FakeAuthRemoteDataSource implements AuthRemoteDataSource {
   Future<AuthUser> fetchMe() async {
     if (fetchMeFailure case final failure?) throw failure;
     return user;
+  }
+
+  @override
+  Future<void> requestPasswordReset(String email) async {
+    if (resetFailure case final failure?) throw failure;
+    resetRequests.add(email);
+  }
+
+  @override
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    if (resetFailure case final failure?) throw failure;
+    lastReset = (email: email, code: code, newPassword: newPassword);
   }
 
   @override

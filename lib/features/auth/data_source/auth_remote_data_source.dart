@@ -16,6 +16,14 @@ abstract class AuthRemoteDataSource {
 
   Future<AuthUser> fetchMe();
 
+  Future<void> requestPasswordReset(String email);
+
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  });
+
   Future<ProcessTracker> startProcess({
     required String flowKey,
     required String deviceId,
@@ -65,6 +73,20 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     final response = await _client.get(Endpoints.me);
     return AuthUser.fromJson(response) ?? (throw _invalidResponse);
   }
+
+  @override
+  Future<void> requestPasswordReset(String email) =>
+      _client.post(Endpoints.forgotPassword, body: {'email': email});
+
+  @override
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) => _client.post(
+    Endpoints.resetPassword,
+    body: {'email': email, 'code': code, 'newPassword': newPassword},
+  );
 
   @override
   Future<ProcessTracker> startProcess({
