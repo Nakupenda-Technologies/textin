@@ -114,11 +114,18 @@ class TextingRepositoryImpl implements TextingRepository {
   @override
   Future<Either<Failure, Message>> sendImageMessage(
     String chatId,
-    String mediaUrl, {
+    String filePath, {
     String? replyToId,
     required String myUserId,
   }) async {
     try {
+      final contentType = filePath.toLowerCase().endsWith('.png')
+          ? 'image/png'
+          : 'image/jpeg';
+      final mediaUrl = await remoteDataSource.uploadMedia(
+        filePath,
+        contentType,
+      );
       final msgApi = await remoteDataSource.sendImageMessage(
         chatId,
         mediaUrl,

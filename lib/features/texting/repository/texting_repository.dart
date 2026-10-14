@@ -38,7 +38,7 @@ abstract class TextingRepository {
 
   Future<Either<Failure, Message>> sendImageMessage(
     String chatId,
-    String mediaUrl, {
+    String filePath, {
     String? replyToId,
     required String myUserId,
   });
