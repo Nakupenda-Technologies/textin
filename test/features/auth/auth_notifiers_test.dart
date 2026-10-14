@@ -11,21 +11,9 @@ import 'package:textin/features/auth/notifier/login_notifier.dart';
 import 'package:textin/features/auth/notifier/registration_notifier.dart';
 import 'package:textin/features/auth/repository/auth_repository.dart';
 import 'package:textin/services/local_storage_service.dart';
-import 'package:textin/shared/widgets/app_toast.dart';
 
+import '../../helpers/recording_toaster.dart';
 import 'fake_auth_remote_data_source.dart';
-
-class RecordingToaster extends Toaster {
-  final List<String> infos = [];
-  final List<({String title, String message})> errors = [];
-
-  @override
-  void info(String message) => infos.add(message);
-
-  @override
-  void error(String title, String message) =>
-      errors.add((title: title, message: message));
-}
 
 void main() {
   late FakeAuthRemoteDataSource remote;
