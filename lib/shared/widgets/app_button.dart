@@ -27,7 +27,7 @@ class AppButton extends StatelessWidget {
         : (isDark ? AppTheme.darkText : AppTheme.header);
 
     final style = ButtonStyle(
-      minimumSize: const WidgetStatePropertyAll(Size.fromHeight(60)),
+      minimumSize: const WidgetStatePropertyAll(Size.fromHeight(52)),
       shape: const WidgetStatePropertyAll(StadiumBorder()),
       elevation: const WidgetStatePropertyAll(0),
       backgroundColor: WidgetStateProperty.resolveWith((states) {

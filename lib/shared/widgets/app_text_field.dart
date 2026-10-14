@@ -65,12 +65,12 @@ class AppTextField extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: FontWeight.w500,
             color: onSurface.withValues(alpha: 0.62),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         TextField(
           controller: controller,
           obscureText: obscureText,
@@ -88,19 +88,19 @@ class AppTextField extends StatelessWidget {
               !obscureText && keyboardType != TextInputType.emailAddress,
           enableSuggestions: !obscureText,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 15,
             fontWeight: FontWeight.w600,
             color: onSurface,
           ),
           decoration: InputDecoration(
-            constraints: const BoxConstraints(minHeight: 60),
+            constraints: const BoxConstraints(minHeight: 50),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 22,
-              vertical: 18,
+              horizontal: 20,
+              vertical: 15,
             ),
             hintText: hintText,
             hintStyle: TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.w400,
               color: onSurface.withValues(alpha: 0.4),
             ),
@@ -109,6 +109,7 @@ class AppTextField extends StatelessWidget {
             errorText: errorText,
             errorMaxLines: 2,
             suffixIcon: suffixIcon,
+            suffixIconColor: onSurface.withValues(alpha: 0.55),
             filled: true,
             fillColor: isDark ? AppTheme.darkSurface : AppTheme.surface,
             border: border(borderColor),
