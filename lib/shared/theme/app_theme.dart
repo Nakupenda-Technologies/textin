@@ -1,6 +1,30 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
+  static const String bodyFont = 'Urbanist';
+  static const String accentFont = 'Syne';
+
+  static const TextStyle _buttonLabel = TextStyle(
+    fontFamily: accentFont,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+  );
+
+  static final FilledButtonThemeData _filledButtonTheme = FilledButtonThemeData(
+    style: FilledButton.styleFrom(textStyle: _buttonLabel),
+  );
+  static final ElevatedButtonThemeData _elevatedButtonTheme =
+      ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(textStyle: _buttonLabel),
+      );
+  static final OutlinedButtonThemeData _outlinedButtonTheme =
+      OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(textStyle: _buttonLabel),
+      );
+  static final TextButtonThemeData _textButtonTheme = TextButtonThemeData(
+    style: TextButton.styleFrom(textStyle: _buttonLabel.copyWith(fontSize: 14)),
+  );
+
   static const Color red = Color.fromRGBO(169, 15, 38, 1);
   static const Color redbg = Color.fromRGBO(253, 237, 239, 1);
   static const Color postbtn = Color.fromRGBO(254, 229, 230, 1);
@@ -73,6 +97,11 @@ class AppTheme {
     useMaterial3: true,
     brightness: Brightness.light,
     scaffoldBackgroundColor: bg,
+    fontFamily: bodyFont,
+    filledButtonTheme: _filledButtonTheme,
+    elevatedButtonTheme: _elevatedButtonTheme,
+    outlinedButtonTheme: _outlinedButtonTheme,
+    textButtonTheme: _textButtonTheme,
     colorScheme: const ColorScheme(
       brightness: Brightness.light,
       primary: red,
@@ -154,6 +183,11 @@ class AppTheme {
     useMaterial3: true,
     brightness: Brightness.dark,
     scaffoldBackgroundColor: darkBg,
+    fontFamily: bodyFont,
+    filledButtonTheme: _filledButtonTheme,
+    elevatedButtonTheme: _elevatedButtonTheme,
+    outlinedButtonTheme: _outlinedButtonTheme,
+    textButtonTheme: _textButtonTheme,
 
     colorScheme: const ColorScheme(
       brightness: Brightness.dark,
