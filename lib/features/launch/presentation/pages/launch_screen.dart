@@ -64,7 +64,7 @@ class _LaunchScreenState extends State<LaunchScreen>
           Center(
             child: ScaleTransition(
               scale: _pulse,
-              child: Image.asset('assets/images/textin_logo.png', width: 360),
+              child: Image.asset('assets/images/textin_logo.png', width: 270),
             ),
           ),
           Align(
