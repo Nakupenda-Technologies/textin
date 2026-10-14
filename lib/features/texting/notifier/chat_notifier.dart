@@ -200,7 +200,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
     );
   }
 
-  Future<void> sendVoiceNote(String mediaUrl, int durationSec) async {
+  Future<void> sendVoiceNote(String filePath, int durationSec) async {
+    final replyId = state.replyingTo?.id;
     final optimisticMsg = Message(
       id: 'local_${DateTime.now().millisecondsSinceEpoch}',
       content: '',
@@ -208,16 +209,21 @@ class ChatNotifier extends StateNotifier<ChatState> {
       isMe: true,
       timestamp: DateTime.now(),
       voiceDuration: Duration(seconds: durationSec),
-      mediaUrl: mediaUrl,
+      localMediaPath: filePath,
+      replyToId: replyId,
       status: MessageStatus.pending,
     );
 
-    state = state.copyWith(messages: [...state.messages, optimisticMsg]);
+    state = state.copyWith(
+      messages: [...state.messages, optimisticMsg],
+      clearReplyingTo: true,
+    );
 
     final result = await repository.sendVoiceMessage(
       chatId,
-      mediaUrl,
+      filePath,
       durationSec,
+      replyToId: replyId,
       myUserId: myUserId,
     );
 
@@ -242,6 +248,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     final confirmed = optimistic.copyWith(
       id: hasServerId ? sent.id : null,
       timestamp: hasServerId ? sent.timestamp : null,
+      mediaUrl: sent.mediaUrl,
       status: MessageStatus.sent,
     );
     final updated = state.messages

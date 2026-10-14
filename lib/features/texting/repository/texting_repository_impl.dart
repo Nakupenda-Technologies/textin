@@ -87,12 +87,16 @@ class TextingRepositoryImpl implements TextingRepository {
   @override
   Future<Either<Failure, Message>> sendVoiceMessage(
     String chatId,
-    String mediaUrl,
+    String filePath,
     int durationSec, {
     String? replyToId,
     required String myUserId,
   }) async {
     try {
+      final mediaUrl = await remoteDataSource.uploadMedia(
+        filePath,
+        'audio/mp4',
+      );
       final msgApi = await remoteDataSource.sendVoiceMessage(
         chatId,
         mediaUrl,

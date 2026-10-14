@@ -36,9 +36,10 @@ class _MessageBubbleState extends State<MessageBubble> {
   }
 
   Future<void> _toggleVoicePlayback() async {
-    if (widget.message.mediaUrl == null || widget.message.mediaUrl!.isEmpty) {
-      return;
-    }
+    final url = widget.message.mediaUrl;
+    final localPath = widget.message.localMediaPath;
+    final hasUrl = url != null && url.isNotEmpty;
+    if (!hasUrl && localPath == null) return;
 
     if (_player == null) {
       _player = AudioPlayer();
@@ -59,7 +60,11 @@ class _MessageBubbleState extends State<MessageBubble> {
           setState(() => _position = pos);
         }
       });
-      await _player!.setUrl(widget.message.mediaUrl!);
+      if (hasUrl) {
+        await _player!.setUrl(url);
+      } else {
+        await _player!.setFilePath(localPath!);
+      }
     }
 
     if (_isPlaying) {

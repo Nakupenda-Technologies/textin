@@ -30,7 +30,7 @@ abstract class TextingRepository {
 
   Future<Either<Failure, Message>> sendVoiceMessage(
     String chatId,
-    String mediaUrl,
+    String filePath,
     int durationSec, {
     String? replyToId,
     required String myUserId,

@@ -1,4 +1,5 @@
 import '../../../config/constants/endpoints.dart';
+import '../../../core/errors/failure.dart';
 import '../../../core/network/client.dart';
 import '../models/api/chat_item.dart';
 import '../models/api/chat_message_api.dart';
@@ -9,6 +10,7 @@ abstract class TextingRemoteDataSource {
   Future<List<ChatItem>> fetchRegularChats(int filterIndex);
   Future<List<ChatItem>> fetchSecretChats();
   Future<List<ChatMessageApi>> fetchMessages(String chatId);
+  Future<String> uploadMedia(String filePath, String contentType);
   Future<ChatMessageApi> sendTextMessage(
     String chatId,
     String text, {
@@ -82,6 +84,22 @@ class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
       return ChatMessagesResponse.fromJson(response).messages;
     }
     return [];
+  }
+
+  @override
+  Future<String> uploadMedia(String filePath, String contentType) async {
+    final dynamic response = await client.upload(
+      Endpoints.mediaUpload,
+      field: 'file',
+      filePath: filePath,
+      contentType: contentType,
+    );
+    final data = response is Map<String, dynamic>
+        ? response['data'] ?? response
+        : null;
+    final url = data is Map<String, dynamic> ? data['url'] : null;
+    if (url is String && url.isNotEmpty) return url;
+    throw const ServerFailure('The upload did not return a media URL');
   }
 
   @override

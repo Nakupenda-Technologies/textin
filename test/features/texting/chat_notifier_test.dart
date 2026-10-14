@@ -31,6 +31,31 @@ class _BlankReplyRepository extends MockTextingRepository {
   }
 }
 
+class _UploadingRepository extends MockTextingRepository {
+  String? sentPath;
+
+  @override
+  Future<Either<Failure, Message>> sendVoiceMessage(
+    String chatId,
+    String filePath,
+    int durationSec, {
+    String? replyToId,
+    required String myUserId,
+  }) async {
+    sentPath = filePath;
+    return Right(
+      Message(
+        id: 'server_voice',
+        content: '',
+        type: MessageType.voice,
+        isMe: true,
+        timestamp: DateTime(2026, 10, 14, 18, 27),
+        mediaUrl: 'https://cdn.test/voice.m4a',
+      ),
+    );
+  }
+}
+
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -62,5 +87,27 @@ void main() {
     expect(ChatMessageApi.unwrap({'message': inner}), inner);
     expect(ChatMessageApi.unwrap({'data': inner}), inner);
     expect(ChatMessageApi.unwrap(inner), inner);
+  });
+
+  test('a voice note sends the recording and keeps the uploaded url', () async {
+    final repository = _UploadingRepository();
+    final notifier = ChatNotifier(
+      chatId: 'chat_1',
+      otherUserId: 'other',
+      myUserId: 'me',
+      repository: repository,
+      socketService: TextingSocketService(WebSocketService()),
+    );
+    addTearDown(notifier.dispose);
+
+    await notifier.sendVoiceNote('/tmp/voice.m4a', 6);
+
+    final sent = notifier.state.messages.single;
+    expect(repository.sentPath, '/tmp/voice.m4a');
+    expect(sent.id, 'server_voice');
+    expect(sent.mediaUrl, 'https://cdn.test/voice.m4a');
+    expect(sent.localMediaPath, '/tmp/voice.m4a');
+    expect(sent.voiceDuration, const Duration(seconds: 6));
+    expect(sent.status, MessageStatus.sent);
   });
 }
