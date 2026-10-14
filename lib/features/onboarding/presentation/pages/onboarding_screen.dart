@@ -12,20 +12,6 @@ import '../widgets/secure_scene.dart';
 
 typedef _Slide = ({Widget scene, String title, String subtitle});
 
-TextStyle _font(
-  String family, {
-  required double size,
-  required double weight,
-  required Color color,
-  double? height,
-}) => TextStyle(
-  fontFamily: family,
-  fontSize: size,
-  fontVariations: [FontVariation.weight(weight)],
-  color: color,
-  height: height,
-);
-
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -102,15 +88,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: TextButton(
                       onPressed: _isLastPage ? null : _finish,
                       style: TextButton.styleFrom(foregroundColor: muted),
-                      child: Text(
-                        'Skip',
-                        style: _font(
-                          'Syne',
-                          size: 14,
-                          weight: 600,
-                          color: muted,
-                        ),
-                      ),
+                      child: const Text('Skip'),
                     ),
                   ),
                 ),
@@ -138,15 +116,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     shape: const StadiumBorder(),
                     elevation: 0,
                   ),
-                  child: Text(
-                    _isLastPage ? 'Get started' : 'Next',
-                    style: _font(
-                      'Syne',
-                      size: 16,
-                      weight: 600,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: Text(_isLastPage ? 'Get started' : 'Next'),
                 ),
               ),
             ],
@@ -192,10 +162,9 @@ class _SlideView extends StatelessWidget {
         Text(
           slide.title,
           textAlign: TextAlign.center,
-          style: _font(
-            'Urbanist',
-            size: 32,
-            weight: 600,
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.w600,
             height: 1.15,
             color: isDark ? AppTheme.darkTitle : AppTheme.text,
           ),
@@ -206,10 +175,9 @@ class _SlideView extends StatelessWidget {
           child: Text(
             slide.subtitle,
             textAlign: TextAlign.center,
-            style: _font(
-              'Urbanist',
-              size: 16,
-              weight: 500,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
               height: 1.5,
               color: isDark ? AppTheme.darkMuted : AppTheme.textMuted,
             ),
