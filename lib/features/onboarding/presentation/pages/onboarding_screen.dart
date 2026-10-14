@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/storage/shared_pref_keys.dart';
@@ -8,13 +10,21 @@ import '../widgets/holding_hands_scene.dart';
 import '../widgets/love_potion_scene.dart';
 import '../widgets/secure_scene.dart';
 
-typedef _Slide = ({
-  Widget scene,
-  String greeting,
-  String emoji,
-  String title,
-  String subtitle,
-});
+typedef _Slide = ({Widget scene, String title, String subtitle});
+
+TextStyle _font(
+  String family, {
+  required double size,
+  required double weight,
+  required Color color,
+  double? height,
+}) => TextStyle(
+  fontFamily: family,
+  fontSize: size,
+  fontVariations: [FontVariation.weight(weight)],
+  color: color,
+  height: height,
+);
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -30,27 +40,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   static const List<_Slide> _slides = [
     (
       scene: HoldingHandsScene(),
-      greeting: 'Hey there!',
-      emoji: '👋',
       title: 'Talk closer',
-      subtitle:
-          'Private conversations with the people who matter, all in one place.',
+      subtitle: 'Private conversations with the people who matter most.',
     ),
     (
       scene: SecureScene(),
-      greeting: 'Your space',
-      emoji: '🔒',
       title: 'Keep it secret',
-      subtitle:
-          'Lock personal chats in your Secret Box. Only your PIN opens it.',
+      subtitle: 'Lock personal chats away behind your Secret Box PIN.',
     ),
     (
       scene: LovePotionScene(),
-      greeting: 'Keep it lit',
-      emoji: '🔥',
-      title: 'Spark streaks',
-      subtitle:
-          'Chat every day to grow your streaks and keep the connection alive.',
+      title: 'Keep the spark',
+      subtitle: 'Chat every day to grow your streaks and stay connected.',
     ),
   ];
 
@@ -74,7 +75,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return;
     }
     _pageController.nextPage(
-      duration: const Duration(milliseconds: 350),
+      duration: const Duration(milliseconds: 400),
       curve: Curves.easeOutCubic,
     );
   }
@@ -82,16 +83,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final muted = isDark ? AppTheme.darkMuted : AppTheme.textMuted;
 
     return Scaffold(
-      backgroundColor: isDark ? AppTheme.darkBg : AppTheme.chatAreaBg,
+      backgroundColor: isDark ? AppTheme.darkBg : AppTheme.surface,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
           child: Column(
             children: [
-              _Header(showSkip: !_isLastPage, onSkip: _finish),
-              const SizedBox(height: 24),
+              SizedBox(
+                height: 44,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: AnimatedOpacity(
+                    opacity: _isLastPage ? 0 : 1,
+                    duration: const Duration(milliseconds: 200),
+                    child: TextButton(
+                      onPressed: _isLastPage ? null : _finish,
+                      style: TextButton.styleFrom(foregroundColor: muted),
+                      child: Text(
+                        'Skip',
+                        style: _font(
+                          'Syne',
+                          size: 14,
+                          weight: 600,
+                          color: muted,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
@@ -101,66 +124,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       _SlideView(slide: _slides[index]),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               _PageDots(count: _slides.length, active: _page),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: 56,
                 child: FilledButton(
                   onPressed: _next,
                   style: FilledButton.styleFrom(
                     backgroundColor: AppTheme.textred,
                     foregroundColor: Colors.white,
                     shape: const StadiumBorder(),
-                    textStyle: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    _isLastPage ? 'Get started' : 'Next',
+                    style: _font(
+                      'Syne',
+                      size: 16,
+                      weight: 600,
+                      color: Colors.white,
                     ),
                   ),
-                  child: Text(_isLastPage ? 'Get started' : 'Next'),
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.showSkip, required this.onSkip});
-
-  final bool showSkip;
-  final VoidCallback onSkip;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return SizedBox(
-      height: 40,
-      child: Row(
-        children: [
-          Image.asset(
-            isDark
-                ? 'assets/images/textin_wordmark_dark.png'
-                : 'assets/images/textin_wordmark.png',
-            height: 30,
-          ),
-          const Spacer(),
-          if (showSkip)
-            TextButton(
-              onPressed: onSkip,
-              style: TextButton.styleFrom(
-                foregroundColor: isDark
-                    ? AppTheme.darkMuted
-                    : AppTheme.textMuted,
-              ),
-              child: const Text('Skip'),
-            ),
-        ],
       ),
     );
   }
@@ -176,78 +167,55 @@ class _SlideView extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: isDark ? AppTheme.darkPinkBg2 : AppTheme.surface,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: slide.scene,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final diameter = min(
+                min(constraints.maxWidth, constraints.maxHeight),
+                360.0,
+              );
+              return Center(
+                child: ClipOval(
+                  child: Container(
+                    width: diameter,
+                    height: diameter,
+                    color: isDark ? AppTheme.darkPinkBg2 : AppTheme.pinkbg,
+                    child: slide.scene,
+                  ),
+                ),
+              );
+            },
           ),
         ),
-        const SizedBox(height: 28),
-        Row(
-          children: [
-            Text(
-              slide.greeting,
-              style: TextStyle(
-                fontSize: 16,
-                color: isDark ? AppTheme.darkMuted : AppTheme.content,
-              ),
-            ),
-            const SizedBox(width: 8),
-            _EmojiBubble(emoji: slide.emoji),
-          ],
-        ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 36),
         Text(
           slide.title,
-          style: TextStyle(
-            fontSize: 34,
-            fontWeight: FontWeight.w700,
-            height: 1.1,
+          textAlign: TextAlign.center,
+          style: _font(
+            'Urbanist',
+            size: 32,
+            weight: 600,
+            height: 1.15,
             color: isDark ? AppTheme.darkTitle : AppTheme.text,
           ),
         ),
-        const SizedBox(height: 10),
-        Text(
-          slide.subtitle,
-          style: TextStyle(
-            fontSize: 14,
-            height: 1.45,
-            color: isDark ? AppTheme.darkMuted : AppTheme.textMuted,
+        const SizedBox(height: 12),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 300),
+          child: Text(
+            slide.subtitle,
+            textAlign: TextAlign.center,
+            style: _font(
+              'Urbanist',
+              size: 16,
+              weight: 500,
+              height: 1.5,
+              color: isDark ? AppTheme.darkMuted : AppTheme.textMuted,
+            ),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _EmojiBubble extends StatelessWidget {
-  const _EmojiBubble({required this.emoji});
-
-  final String emoji;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      width: 32,
-      height: 32,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: isDark ? AppTheme.darkSurface : AppTheme.surface,
-        border: Border.all(
-          color: isDark ? AppTheme.darkBorder : AppTheme.btnborder,
-        ),
-      ),
-      child: Text(emoji, style: const TextStyle(fontSize: 16)),
     );
   }
 }
@@ -268,14 +236,15 @@ class _PageDots extends StatelessWidget {
         for (var i = 0; i < count; i++)
           AnimatedContainer(
             duration: const Duration(milliseconds: 250),
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            width: i == active ? 24 : 8,
-            height: 8,
+            curve: Curves.easeOut,
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            width: i == active ? 22 : 6,
+            height: 6,
             decoration: BoxDecoration(
               color: i == active
                   ? AppTheme.textred
-                  : (isDark ? AppTheme.darkDivider : AppTheme.pinkborder),
-              borderRadius: BorderRadius.circular(4),
+                  : (isDark ? AppTheme.darkDivider : AppTheme.greyFill),
+              borderRadius: BorderRadius.circular(3),
             ),
           ),
       ],

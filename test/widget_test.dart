@@ -62,7 +62,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
     }
-    expect(find.text('Spark streaks'), findsOneWidget);
+    expect(find.text('Keep the spark'), findsOneWidget);
 
     await tester.tap(find.text('Get started'));
     await tester.pumpAndSettle();
