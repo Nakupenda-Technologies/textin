@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/env/env.dart';
+import '../core/navigation/navigator_key.dart';
 import '../router/app_router.dart';
 import '../shared/theme/app_theme.dart';
 
@@ -20,6 +21,7 @@ class TextinApp extends StatelessWidget {
       observers: observers,
       overrides: overrides,
       child: MaterialApp(
+        navigatorKey: rootNavigatorKey,
         title: Env.appName,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
