@@ -95,12 +95,11 @@ class AuthRepository {
           SharedPrefKeys.registrationProcessId,
           tracker.processId,
         );
-        final result = await _remote.submitStep(
+        final next = await _answerAutomaticSteps(
           tracker.processId,
-          RegistrationStep.accountType,
-          {'accountType': 'personal'},
+          tracker.step.nextStep ?? RegistrationStep.accountType,
         );
-        return result.step.nextStep ?? RegistrationStep.basicInfo;
+        return next ?? RegistrationStep.basicInfo;
       });
 
   Future<Either<Failure, RegistrationStep?>> resumeRegistration() =>
@@ -113,7 +112,7 @@ class AuthRepository {
           await _clearProcessId();
           return null;
         }
-        return tracker.step.nextStep;
+        return _answerAutomaticSteps(processId, tracker.step.nextStep);
       });
 
   Future<Either<Failure, bool>> isUsernameAvailable(String username) =>
@@ -139,7 +138,7 @@ class AuthRepository {
     required Gender gender,
   }) => _guard(() async {
     final processId = _requireProcessId();
-    var result = await _remote
+    final result = await _remote
         .submitStep(processId, RegistrationStep.ageGender, {
           'dateOfBirth': DateTime.utc(
             dateOfBirth.year,
@@ -148,24 +147,7 @@ class AuthRepository {
           ).toIso8601String(),
           'gender': gender.apiValue,
         });
-
-    // Textin has no theme or creator settings, so these Nakupenda steps are
-    // answered with the same defaults the parent app sends.
-    if (result.step.nextStep == RegistrationStep.themeSelection) {
-      result = await _remote.submitStep(
-        processId,
-        RegistrationStep.themeSelection,
-        {'skip': true},
-      );
-    }
-    if (result.step.nextStep == RegistrationStep.creatorMode) {
-      result = await _remote.submitStep(
-        processId,
-        RegistrationStep.creatorMode,
-        {'creatorMode': false},
-      );
-    }
-    return result.step.nextStep;
+    return _answerAutomaticSteps(processId, result.step.nextStep);
   });
 
   Future<Either<Failure, List<CurrentItem>>> fetchCurrents() =>
@@ -191,6 +173,30 @@ class AuthRepository {
     final result = await _remote.submitStep(_requireProcessId(), step, payload);
     return result.step.nextStep;
   });
+
+  // Textin only offers personal accounts and has no theme or creator
+  // settings, so these Nakupenda steps are answered with the same defaults
+  // the parent app sends instead of being shown to the user.
+  Future<RegistrationStep?> _answerAutomaticSteps(
+    String processId,
+    RegistrationStep? step,
+  ) async {
+    var next = step;
+    for (var attempt = 0; attempt < RegistrationStep.values.length; attempt++) {
+      final payload = switch (next) {
+        RegistrationStep.accountType => {'accountType': 'personal'},
+        RegistrationStep.themeSelection => {'skip': true},
+        RegistrationStep.creatorMode => {'creatorMode': false},
+        _ => null,
+      };
+      if (next == null || payload == null) return next;
+      final result = await _remote.submitStep(processId, next, payload);
+      next = result.step.nextStep;
+    }
+    throw const UnknownFailure(
+      "We couldn't finish setting up your account. Please try again.",
+    );
+  }
 
   Future<AuthUser> _loadUser() async {
     final user = await _remote.fetchMe();

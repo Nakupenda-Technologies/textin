@@ -148,6 +148,19 @@ void main() {
       );
     });
 
+    test('resumes past steps that Textin answers automatically', () async {
+      await setUpWith({SharedPrefKeys.registrationProcessId: 'process-1'});
+      remote.resumeStep = RegistrationStep.themeSelection;
+
+      final result = await repository.resumeRegistration();
+
+      expect(result.getOrElse(() => null), RegistrationStep.currents);
+      expect(remote.submittedSteps.map((s) => s.step), [
+        RegistrationStep.themeSelection,
+        RegistrationStep.creatorMode,
+      ]);
+    });
+
     test('forgets an expired sign up when resuming', () async {
       await setUpWith({SharedPrefKeys.registrationProcessId: 'process-1'});
       remote.processStatus = 'expired';
