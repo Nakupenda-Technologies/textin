@@ -97,7 +97,7 @@ class _ChatViewState extends ConsumerState<_ChatView> {
                 gradient: RadialGradient(
                   radius: 0.9,
                   colors: [
-                    accent.withValues(alpha: customization.auraGlow * 0.35),
+                    accent.withValues(alpha: customization.auraGlow * 0.12),
                     accent.withValues(alpha: 0),
                   ],
                 ),
