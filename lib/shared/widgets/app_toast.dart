@@ -8,6 +8,14 @@ import '../theme/app_theme.dart';
 
 enum _ToastKind { info, error }
 
+class Toaster {
+  const Toaster();
+
+  void info(String message) => AppToast.show(message);
+
+  void error(String title, String message) => AppToast.error(title, message);
+}
+
 class AppToast {
   AppToast._();
 
