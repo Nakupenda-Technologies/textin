@@ -9,6 +9,7 @@ class Conversation extends Equatable {
     required this.id,
     required this.name,
     this.avatarUrl,
+    this.lastSeen,
     this.isPinned = false,
     this.isOnline = false,
     this.hasFireBadge = false,
@@ -22,6 +23,7 @@ class Conversation extends Equatable {
       id: item.id,
       name: item.otherUser.displayName,
       avatarUrl: item.otherUser.profilePictureUrl,
+      lastSeen: item.otherUser.lastSeen,
       isPinned: item.isPinned,
       inSecretInbox: item.inSecretInbox,
       messages: item.lastMessage != null
@@ -33,6 +35,7 @@ class Conversation extends Equatable {
   final String id;
   final String name;
   final String? avatarUrl;
+  final DateTime? lastSeen;
   final bool isPinned;
   final bool isOnline;
   final bool hasFireBadge;
@@ -58,6 +61,7 @@ class Conversation extends Equatable {
     String? id,
     String? name,
     String? avatarUrl,
+    DateTime? lastSeen,
     bool? isPinned,
     bool? isOnline,
     bool? hasFireBadge,
@@ -69,6 +73,7 @@ class Conversation extends Equatable {
       id: id ?? this.id,
       name: name ?? this.name,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      lastSeen: lastSeen ?? this.lastSeen,
       isPinned: isPinned ?? this.isPinned,
       isOnline: isOnline ?? this.isOnline,
       hasFireBadge: hasFireBadge ?? this.hasFireBadge,
@@ -83,6 +88,7 @@ class Conversation extends Equatable {
     id,
     name,
     avatarUrl,
+    lastSeen,
     isPinned,
     isOnline,
     hasFireBadge,
