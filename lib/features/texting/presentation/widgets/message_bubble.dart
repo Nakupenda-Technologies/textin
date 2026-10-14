@@ -4,17 +4,21 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../models/chat_customization.dart';
 import '../../models/message.dart';
+import 'mood_palette.dart';
 
 class MessageBubble extends StatefulWidget {
   const MessageBubble({
     super.key,
     required this.message,
     this.onReply,
+    this.customization = const ChatCustomization(),
   });
 
   final Message message;
   final VoidCallback? onReply;
+  final ChatCustomization customization;
 
   @override
   State<MessageBubble> createState() => _MessageBubbleState();
@@ -76,14 +80,17 @@ class _MessageBubbleState extends State<MessageBubble> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cs = Theme.of(context).colorScheme;
 
+    final palette = MoodPalette.of(widget.customization.mood);
+
     final bubbleBg = isMe
-        ? AppTheme.textingSentBubble
-        : (isDark
-            ? AppTheme.darkTextingReceivedBubble
-            : AppTheme.textingReceivedBubble);
+        ? palette.sentBg
+        : (isDark ? AppTheme.darkTextingReceivedBubble : palette.receivedBg);
     final fg = isMe
-        ? Colors.white
-        : (isDark ? cs.onSurface : AppTheme.textingReceivedText);
+        ? palette.sentFg
+        : (isDark ? cs.onSurface : palette.receivedFg);
+    final border = isMe
+        ? palette.sentBorder
+        : (isDark ? AppTheme.darkPinkBorder : palette.receivedBorder);
 
     return GestureDetector(
       onLongPress: widget.onReply,
@@ -99,20 +106,13 @@ class _MessageBubbleState extends State<MessageBubble> {
               ),
               decoration: BoxDecoration(
                 color: bubbleBg,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(24),
-                  topRight: const Radius.circular(24),
-                  bottomLeft: Radius.circular(isMe ? 24 : 4),
-                  bottomRight: Radius.circular(isMe ? 4 : 24),
+                borderRadius: bubbleRadius(
+                  widget.customization.bubbleStyle,
+                  isMe: isMe,
                 ),
-                border: isMe
+                border: border == null
                     ? null
-                    : Border.all(
-                        width: 0.5,
-                        color: isDark
-                            ? AppTheme.darkPinkBorder
-                            : AppTheme.pinkborder,
-                      ),
+                    : Border.all(width: 0.5, color: border),
               ),
               padding: widget.message.type == MessageType.voice
                   ? const EdgeInsets.fromLTRB(8, 8, 16, 8)
@@ -126,7 +126,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                       widget.message.mediaUrl != null)
                     _buildImageMessage(widget.message.mediaUrl!),
                   if (widget.message.type == MessageType.voice)
-                    _buildVoiceMessage(isMe, fg),
+                    _buildVoiceMessage(fg, bubbleBg),
                   if (widget.message.type != MessageType.voice &&
                       widget.message.content.isNotEmpty)
                     Text(
@@ -187,7 +187,7 @@ class _MessageBubbleState extends State<MessageBubble> {
     );
   }
 
-  Widget _buildVoiceMessage(bool isMe, Color fg) {
+  Widget _buildVoiceMessage(Color fg, Color bubbleBg) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -200,7 +200,7 @@ class _MessageBubbleState extends State<MessageBubble> {
             child: Icon(
               _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
               size: 20,
-              color: isMe ? AppTheme.textingSentBubble : Colors.white,
+              color: bubbleBg,
             ),
           ),
         ),
