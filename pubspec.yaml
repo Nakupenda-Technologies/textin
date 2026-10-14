@@ -58,6 +58,9 @@ flutter:
     - family: Urbanist
       fonts:
         - asset: assets/fonts/Urbanist.ttf
+    - family: Syne
+      fonts:
+        - asset: assets/fonts/Syne.ttf
 
 flutter_launcher_icons:
   android: true
