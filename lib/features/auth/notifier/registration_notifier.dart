@@ -307,6 +307,8 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
     );
   }
 
+  void clearCurrents() => state = state.copyWith(selectedCurrentIds: const {});
+
   Future<RegistrationOutcome> completeRegistration() async {
     final errors = <RegistrationField, String>{
       if (state.selectedCurrentIds.length < minCurrents)
