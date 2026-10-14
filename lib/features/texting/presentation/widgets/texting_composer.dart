@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../models/message.dart';
+
+enum _RecordingPhase { idle, recording, paused, reviewing }
 
 class TextingComposer extends StatefulWidget {
   const TextingComposer({
@@ -42,7 +46,11 @@ class _TextingComposerState extends State<TextingComposer> {
   final AudioRecorder _recorder = AudioRecorder();
   final Stopwatch _recordingClock = Stopwatch();
   Timer? _recordingTicker;
-  bool _isRecording = false;
+  AudioPlayer? _previewPlayer;
+  _RecordingPhase _phase = _RecordingPhase.idle;
+  String? _recordedPath;
+
+  bool get _isRecording => _phase != _RecordingPhase.idle;
 
   @override
   void initState() {
@@ -55,6 +63,7 @@ class _TextingComposerState extends State<TextingComposer> {
   void dispose() {
     _recordingTicker?.cancel();
     _recorder.dispose();
+    _previewPlayer?.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -82,25 +91,83 @@ class _TextingComposerState extends State<TextingComposer> {
       const Duration(seconds: 1),
       (_) => setState(() {}),
     );
-    setState(() => _isRecording = true);
+    setState(() => _phase = _RecordingPhase.recording);
+  }
+
+  Future<void> _pauseRecording() async {
+    await _recorder.pause();
+    _recordingClock.stop();
+    setState(() => _phase = _RecordingPhase.paused);
+  }
+
+  Future<void> _resumeRecording() async {
+    await _recorder.resume();
+    _recordingClock.start();
+    setState(() => _phase = _RecordingPhase.recording);
+  }
+
+  Future<void> _reviewRecording() async {
+    _recordingTicker?.cancel();
+    _recordingClock.stop();
+    final path = await _recorder.stop();
+    if (path == null) {
+      _endRecording();
+      return;
+    }
+
+    final player = _previewPlayer ??= AudioPlayer();
+    await player.setFilePath(path);
+    setState(() {
+      _recordedPath = path;
+      _phase = _RecordingPhase.reviewing;
+    });
+    await player.play();
+  }
+
+  Future<void> _togglePreview() async {
+    final player = _previewPlayer;
+    if (player == null) return;
+
+    if (player.playing) {
+      await player.pause();
+    } else {
+      if (player.processingState == ProcessingState.completed) {
+        await player.seek(Duration.zero);
+      }
+      await player.play();
+    }
   }
 
   void _endRecording() {
     _recordingTicker?.cancel();
     _recordingClock.stop();
-    setState(() => _isRecording = false);
+    setState(() {
+      _phase = _RecordingPhase.idle;
+      _recordedPath = null;
+    });
   }
 
   Future<void> _sendRecording() async {
     final seconds = _recordingClock.elapsed.inSeconds;
+    final reviewedPath = _recordedPath;
     _endRecording();
-    final path = await _recorder.stop();
+    await _previewPlayer?.stop();
+    final path = reviewedPath ?? await _recorder.stop();
     if (path != null && seconds > 0) widget.onSendVoice(path, seconds);
   }
 
   Future<void> _cancelRecording() async {
+    final reviewedPath = _recordedPath;
     _endRecording();
-    await _recorder.cancel();
+    if (reviewedPath == null) {
+      await _recorder.cancel();
+      return;
+    }
+
+    await _previewPlayer?.stop();
+    try {
+      await File(reviewedPath).delete();
+    } on FileSystemException catch (_) {}
   }
 
   void _handleSend() {
@@ -276,8 +343,7 @@ class _TextingComposerState extends State<TextingComposer> {
 
   Widget _buildRecordingIndicator() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final elapsed = _recordingClock.elapsed;
-    final seconds = (elapsed.inSeconds % 60).toString().padLeft(2, '0');
+    final fg = Theme.of(context).colorScheme.onSurface;
 
     return Container(
       height: 40,
@@ -289,8 +355,24 @@ class _TextingComposerState extends State<TextingComposer> {
           color: isDark ? AppTheme.darkBorder : AppTheme.grayBg,
         ),
       ),
-      child: Row(
-        children: [
+      child: _phase == _RecordingPhase.reviewing
+          ? _buildPreviewControls(fg)
+          : _buildRecordingControls(fg),
+    );
+  }
+
+  Widget _buildRecordingControls(Color fg) {
+    final isPaused = _phase == _RecordingPhase.paused;
+
+    return Row(
+      children: [
+        if (isPaused)
+          _IndicatorButton(
+            icon: Icons.play_arrow_rounded,
+            color: fg,
+            onTap: _reviewRecording,
+          )
+        else
           Container(
             width: 8,
             height: 8,
@@ -299,27 +381,97 @@ class _TextingComposerState extends State<TextingComposer> {
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 8),
-          Text(
-            '${elapsed.inMinutes}:$seconds',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+        const SizedBox(width: 8),
+        Text(
+          _formatDuration(_recordingClock.elapsed),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: fg,
           ),
-          const SizedBox(width: 8),
-          const Text(
-            'Recording...',
-            style: TextStyle(
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            isPaused ? 'Paused' : 'Recording...',
+            style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: AppTheme.textingTimestamp,
             ),
           ),
-        ],
-      ),
+        ),
+        _IndicatorButton(
+          icon: isPaused ? Icons.mic_rounded : Icons.pause_rounded,
+          color: isPaused ? AppTheme.red : fg,
+          onTap: isPaused ? _resumeRecording : _pauseRecording,
+        ),
+      ],
     );
+  }
+
+  Widget _buildPreviewControls(Color fg) {
+    final player = _previewPlayer!;
+
+    return Row(
+      children: [
+        StreamBuilder<PlayerState>(
+          stream: player.playerStateStream,
+          builder: (context, snapshot) {
+            final state = snapshot.data;
+            final isPlaying =
+                state != null &&
+                state.playing &&
+                state.processingState != ProcessingState.completed;
+            return _IndicatorButton(
+              icon: isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+              color: fg,
+              onTap: _togglePreview,
+            );
+          },
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: StreamBuilder<Duration>(
+            stream: player.positionStream,
+            builder: (context, snapshot) {
+              final total = player.duration ?? _recordingClock.elapsed;
+              final position = snapshot.data ?? Duration.zero;
+              final progress = total.inMilliseconds == 0
+                  ? 0.0
+                  : position.inMilliseconds / total.inMilliseconds;
+              return Row(
+                children: [
+                  Expanded(
+                    child: LinearProgressIndicator(
+                      value: progress.clamp(0.0, 1.0),
+                      minHeight: 3,
+                      color: fg,
+                      backgroundColor: AppTheme.grayBg,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _formatDuration(total - position),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: fg,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatDuration(Duration d) {
+    final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '${d.inMinutes}:$seconds';
   }
 
   Widget _buildReplyPreview() {
@@ -389,6 +541,31 @@ class _CircleButton extends StatelessWidget {
         customBorder: const CircleBorder(),
         onTap: onTap,
         child: SizedBox(width: 40, height: 40, child: Center(child: child)),
+      ),
+    );
+  }
+}
+
+class _IndicatorButton extends StatelessWidget {
+  const _IndicatorButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: SizedBox(
+        width: 28,
+        height: 40,
+        child: Icon(icon, size: 22, color: color),
       ),
     );
   }
