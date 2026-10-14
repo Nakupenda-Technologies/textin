@@ -121,7 +121,7 @@ void main() {
     await tester.pumpWidget(const TextinApp());
     await _settleFrames(tester);
 
-    expect(find.text('Textin Dev'), findsOneWidget);
+    expect(find.text('TEXTin'), findsOneWidget);
   });
 
   testWidgets('login stays disabled until both fields are filled', (
@@ -142,7 +142,7 @@ void main() {
     await tester.tap(find.text('Login'));
     await _settleFrames(tester, 3);
 
-    expect(find.text('Textin Dev'), findsOneWidget);
+    expect(find.text('TEXTin'), findsOneWidget);
   });
 
   testWidgets('the sign up link opens the create profile step', (tester) async {

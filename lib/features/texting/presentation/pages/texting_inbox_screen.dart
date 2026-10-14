@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../config/env/env.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/di/locator.dart';
-import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../auth/notifier/session_notifier.dart';
+import '../../models/conversation.dart';
 import '../../notifier/inbox_notifier.dart';
 import '../../repository/texting_repository.dart';
 import '../widgets/conversation_tile.dart';
@@ -22,9 +22,19 @@ class TextingInboxScreen extends ConsumerStatefulWidget {
 
 class _TextingInboxScreenState extends ConsumerState<TextingInboxScreen> {
   final TextEditingController _searchController = TextEditingController();
-  bool _isSearching = false;
-
-  final List<String> _filters = ['All', 'Unread', 'Active', 'Archived'];
+  final List<(String, Widget?)> _filters = [
+    ('All', null),
+    ('Unread', null),
+    (
+      'Aura Active',
+      SvgPicture.asset(
+        'assets/svgs/aura_active_icon.svg',
+        width: 14,
+        height: 14,
+      ),
+    ),
+    ('Archived', const Icon(Icons.archive_outlined, size: 14)),
+  ];
 
   @override
   void initState() {
@@ -59,9 +69,7 @@ class _TextingInboxScreenState extends ConsumerState<TextingInboxScreen> {
           );
           result.fold(
             (failure) {
-              messenger.showSnackBar(
-                SnackBar(content: Text(failure.message)),
-              );
+              messenger.showSnackBar(SnackBar(content: Text(failure.message)));
             },
             (conversation) {
               navigator.push(
@@ -86,169 +94,105 @@ class _TextingInboxScreenState extends ConsumerState<TextingInboxScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(inboxNotifierProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                style: const TextStyle(color: AppColors.textPrimary),
-                decoration: const InputDecoration(
-                  hintText: 'Search conversations...',
-                  border: InputBorder.none,
+      backgroundColor: isDark ? AppTheme.darkBg : AppTheme.chatAreaBg,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: Text(
+                'TEXTin',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppTheme.darkTitle : AppTheme.header,
                 ),
-                onChanged: (q) =>
-                    ref.read(inboxNotifierProvider.notifier).search(q),
-              )
-            : Row(
-                children: [
-                  Text(Env.appName, style: AppTextStyle.heading1.copyWith(fontSize: 22)),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      Env.flavor.name.toUpperCase(),
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
               ),
-        actions: [
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
-            onPressed: () {
-              setState(() {
-                _isSearching = !_isSearching;
-                if (!_isSearching) {
-                  _searchController.clear();
-                  ref.read(inboxNotifierProvider.notifier).search('');
-                }
-              });
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.lock_outline),
-            tooltip: 'Secret Inbox',
-            onPressed: _openSecretInbox,
-          ),
-        ],
+            ),
+            _SearchField(
+              controller: _searchController,
+              onChanged: (q) =>
+                  ref.read(inboxNotifierProvider.notifier).search(q),
+            ),
+            _buildFilterChips(state),
+            if (state.secretConversationsCount > 0)
+              _SecretInboxCard(
+                count: state.secretConversationsCount,
+                onTap: _openSecretInbox,
+              ),
+            Expanded(child: _buildConversations(state)),
+          ],
+        ),
       ),
-      body: Column(
+      floatingActionButton: _NewChatButton(onTap: _openNewChatModal),
+    );
+  }
+
+  Widget _buildConversations(InboxState state) {
+    if (state.status == InboxStatus.loading && state.conversations.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final displayed = state.displayedConversations;
+    if (displayed.isEmpty) {
+      return Center(
+        child: Text(
+          'No conversations yet 💬',
+          style: AppTextStyle.bodySecondary,
+        ),
+      );
+    }
+
+    final pinned = displayed.where((c) => c.isPinned).toList();
+    final recent = displayed.where((c) => !c.isPinned).toList();
+
+    return RefreshIndicator(
+      onRefresh: () =>
+          ref.read(inboxNotifierProvider.notifier).loadConversations(),
+      child: ListView(
+        padding: const EdgeInsets.only(bottom: 96),
         children: [
-          _buildFilterChips(state),
-          if (state.secretConversationsCount > 0)
-            _SecretInboxCard(
-              count: state.secretConversationsCount,
-              onTap: _openSecretInbox,
-            ),
-          Expanded(
-            child: Builder(
-              builder: (context) {
-                if (state.status == InboxStatus.loading &&
-                    state.conversations.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final displayed = state.displayedConversations;
-                if (displayed.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 56,
-                          color: AppColors.textSecondary.withValues(alpha: 0.5),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No conversations yet 💬',
-                          style: AppTextStyle.heading3.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Tap + to start a new chat with your contacts',
-                          style: AppTextStyle.bodySecondary,
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: () =>
-                      ref.read(inboxNotifierProvider.notifier).loadConversations(),
-                  child: ListView.separated(
-                    itemCount: displayed.length,
-                    separatorBuilder: (_, _) => const Divider(
-                      height: 1,
-                      indent: 74,
-                      color: AppColors.border,
-                    ),
-                    itemBuilder: (context, index) {
-                      final conversation = displayed[index];
-                      return ConversationTile(
-                        conversation: conversation,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => TextingChatScreen(
-                                conversation: conversation,
-                              ),
-                            ),
-                          ).then((_) {
-                            ref
-                                .read(inboxNotifierProvider.notifier)
-                                .loadConversations();
-                          });
-                        },
-                        onTogglePin: () => ref
-                            .read(inboxNotifierProvider.notifier)
-                            .togglePin(conversation.id),
-                        onToggleSecret: () => ref
-                            .read(inboxNotifierProvider.notifier)
-                            .toggleSecretInbox(conversation.id),
-                        onMarkRead: () => ref
-                            .read(inboxNotifierProvider.notifier)
-                            .markRead(conversation.id),
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
+          if (pinned.isNotEmpty) ...[
+            const _SectionLabel('PINNED'),
+            for (final c in pinned) _buildTile(c),
+          ],
+          if (recent.isNotEmpty) ...[
+            const _SectionLabel('RECENT'),
+            for (final c in recent) _buildTile(c),
+          ],
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'texting_fab',
-        backgroundColor: AppTheme.red,
-        foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        elevation: 4,
-        onPressed: _openNewChatModal,
-        child: const Icon(Icons.add, color: Colors.white, size: 26),
       ),
     );
   }
 
+  Widget _buildTile(Conversation conversation) {
+    final notifier = ref.read(inboxNotifierProvider.notifier);
+    return ConversationTile(
+      conversation: conversation,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TextingChatScreen(conversation: conversation),
+          ),
+        ).then((_) => notifier.loadConversations());
+      },
+      onTogglePin: () => notifier.togglePin(conversation.id),
+      onToggleSecret: () => notifier.toggleSecretInbox(conversation.id),
+      onMarkRead: () => notifier.markRead(conversation.id),
+    );
+  }
+
   Widget _buildFilterChips(InboxState state) {
-    return Container(
-      height: 38,
-      margin: const EdgeInsets.symmetric(vertical: 8),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return SizedBox(
+      height: 30,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
@@ -256,29 +200,26 @@ class _TextingInboxScreenState extends ConsumerState<TextingInboxScreen> {
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final isSelected = state.selectedFilterIndex == index;
-          final label = _filters[index];
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          final textColor = isSelected
-              ? Colors.white
-              : (isDark
-                  ? AppTheme.darkTextingFilterInactiveFg
-                  : AppTheme.textingFilterInactiveFg);
+          final (label, icon) = _filters[index];
 
           return GestureDetector(
             onTap: () =>
                 ref.read(inboxNotifierProvider.notifier).setFilter(index),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppTheme.textingTagRomanticBg
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(24),
-                border: isSelected
-                    ? Border.all(color: AppTheme.textingActiveRedBorder, width: 1)
-                    : Border.all(
-                        color: Theme.of(context).dividerColor, width: 1),
+                    ? (isDark
+                          ? AppTheme.darkRedBg
+                          : AppTheme.textingTagRomanticBg2)
+                    : (isDark ? AppTheme.darkSurface : AppTheme.bg),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isSelected
+                      ? AppTheme.textingActiveRedBorder
+                      : (isDark ? AppTheme.darkBorder : AppTheme.grayBg),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -286,37 +227,119 @@ class _TextingInboxScreenState extends ConsumerState<TextingInboxScreen> {
                   Text(
                     label,
                     style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: textColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? AppTheme.darkTextingFilterInactiveFg
+                          : AppTheme.pillRed,
                     ),
                   ),
-                  if (index == 1 && state.totalUnreadCount > 0) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected ? Colors.white : AppTheme.red,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        state.totalUnreadCount.toString(),
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected ? AppTheme.red : Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
+                  if (icon != null) ...[const SizedBox(width: 8), icon],
                 ],
               ),
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _SearchField extends StatelessWidget {
+  const _SearchField({required this.controller, required this.onChanged});
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.darkSurface : AppTheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? AppTheme.darkBorder : AppTheme.grayBg,
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.search, size: 18, color: AppTheme.grey),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              onChanged: onChanged,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+              decoration: const InputDecoration(
+                hintText: 'Type to search',
+                hintStyle: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppTheme.grey,
+                ),
+                border: InputBorder.none,
+                isDense: true,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          color: AppTheme.textingSectionLabel,
+        ),
+      ),
+    );
+  }
+}
+
+class _NewChatButton extends StatelessWidget {
+  const _NewChatButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: const BoxDecoration(
+          color: AppTheme.textingTagRomanticReceivedBg,
+          shape: BoxShape.circle,
+        ),
+        alignment: Alignment.center,
+        child: Container(
+          width: 26,
+          height: 26,
+          decoration: const BoxDecoration(
+            color: AppTheme.textred,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.add, size: 18, color: Colors.white),
+        ),
       ),
     );
   }
@@ -331,15 +354,16 @@ class _SecretInboxCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: GestureDetector(
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: AppTheme.textingSecretInboxBg,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.textingSecretInboxBorder),
+            borderRadius: BorderRadius.circular(12),
+            gradient: const LinearGradient(
+              colors: [AppTheme.redbg, AppTheme.pinkbg],
+            ),
           ),
           child: Row(
             children: [
@@ -372,11 +396,11 @@ class _SecretInboxCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '$count hidden messages',
+                      '$count hidden ${count == 1 ? 'message' : 'messages'}',
                       style: const TextStyle(
                         fontSize: 12,
-                        color: AppTheme.red,
-                        fontWeight: FontWeight.w500,
+                        color: AppTheme.textred,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -384,10 +408,9 @@ class _SecretInboxCard extends StatelessWidget {
               ),
               Icon(
                 Icons.chevron_right_rounded,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.55),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.55),
                 size: 20,
               ),
             ],
@@ -397,4 +420,3 @@ class _SecretInboxCard extends StatelessWidget {
     );
   }
 }
-
