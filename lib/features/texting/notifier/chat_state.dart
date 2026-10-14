@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../models/chat_customization.dart';
 import '../models/message.dart';
 
 enum ChatStatus { initial, loading, loaded, error }
@@ -12,6 +13,7 @@ class ChatState extends Equatable {
     this.replyingTo,
     this.errorMessage,
     this.draftText = '',
+    this.customization = const ChatCustomization(),
   });
 
   final ChatStatus status;
@@ -21,6 +23,7 @@ class ChatState extends Equatable {
   final Message? replyingTo;
   final String? errorMessage;
   final String draftText;
+  final ChatCustomization customization;
 
   ChatState copyWith({
     ChatStatus? status,
@@ -31,6 +34,7 @@ class ChatState extends Equatable {
     bool clearReplyingTo = false,
     String? errorMessage,
     String? draftText,
+    ChatCustomization? customization,
   }) {
     return ChatState(
       status: status ?? this.status,
@@ -40,6 +44,7 @@ class ChatState extends Equatable {
       replyingTo: clearReplyingTo ? null : (replyingTo ?? this.replyingTo),
       errorMessage: errorMessage ?? this.errorMessage,
       draftText: draftText ?? this.draftText,
+      customization: customization ?? this.customization,
     );
   }
 
@@ -52,5 +57,6 @@ class ChatState extends Equatable {
     replyingTo,
     errorMessage,
     draftText,
+    customization,
   ];
 }

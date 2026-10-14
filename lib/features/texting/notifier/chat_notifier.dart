@@ -1,7 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/chat_customization.dart';
 import '../models/message.dart';
 import '../repository/texting_repository.dart';
+import '../services/chat_customization_store.dart';
 import '../services/message_draft_service.dart';
 import '../services/texting_socket_service.dart';
 import 'chat_state.dart';
@@ -15,15 +17,23 @@ class ChatArgs extends Equatable {
     required this.otherUserId,
     required this.myUserId,
     this.initialMessages = const [],
+    this.initialCustomization,
   });
 
   final String chatId;
   final String otherUserId;
   final String myUserId;
   final List<Message> initialMessages;
+  final ChatCustomization? initialCustomization;
 
   @override
-  List<Object?> get props => [chatId, otherUserId, myUserId, initialMessages];
+  List<Object?> get props => [
+    chatId,
+    otherUserId,
+    myUserId,
+    initialMessages,
+    initialCustomization,
+  ];
 }
 
 final chatNotifierProvider = StateNotifierProvider.autoDispose
@@ -38,6 +48,7 @@ final chatNotifierProvider = StateNotifierProvider.autoDispose
     repository: repository,
     socketService: socketService,
     initialMessages: args.initialMessages,
+    initialCustomization: args.initialCustomization,
   );
 });
 
@@ -49,7 +60,15 @@ class ChatNotifier extends StateNotifier<ChatState> {
     required this.repository,
     required this.socketService,
     List<Message> initialMessages = const [],
-  }) : super(ChatState(messages: initialMessages)) {
+    ChatCustomization? initialCustomization,
+  }) : super(
+         ChatState(
+           messages: initialMessages,
+           customization: ChatCustomizationStore.read(chatId) ??
+               initialCustomization ??
+               const ChatCustomization(),
+         ),
+       ) {
     _init();
   }
 
@@ -112,6 +131,16 @@ class ChatNotifier extends StateNotifier<ChatState> {
   void onDraftChanged(String text) {
     MessageDraftService.saveDraft(chatId, text);
     state = state.copyWith(draftText: text);
+  }
+
+  Future<void> updateCustomization(ChatCustomization customization) async {
+    if (customization == state.customization) return;
+
+    state = state.copyWith(customization: customization);
+    await ChatCustomizationStore.save(chatId, customization);
+    // The backend's customization payload is unconfirmed, so the local copy
+    // stays the source of truth and a failed sync is not surfaced.
+    await repository.updateCustomization(chatId, customization);
   }
 
   void emitTyping(bool isTyping) {
