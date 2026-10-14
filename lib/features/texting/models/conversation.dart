@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'api/chat_item.dart';
+import 'chat_customization.dart';
 import 'message.dart';
 
 enum ConversationTag { romantic, professional, chill, excited, none }
@@ -15,10 +16,14 @@ class Conversation extends Equatable {
     this.hasFireBadge = false,
     this.inSecretInbox = false,
     this.tag = ConversationTag.none,
+    this.customization,
     this.messages = const [],
   });
 
   factory Conversation.fromChatItem(ChatItem item, {required String myUserId}) {
+    final customization = item.customization != null
+        ? ChatCustomization.fromJson(item.customization!)
+        : null;
     return Conversation(
       id: item.id,
       name: item.otherUser.displayName,
@@ -26,6 +31,8 @@ class Conversation extends Equatable {
       lastSeen: item.otherUser.lastSeen,
       isPinned: item.isPinned,
       inSecretInbox: item.inSecretInbox,
+      tag: customization?.mood ?? ConversationTag.none,
+      customization: customization,
       messages: item.lastMessage != null
           ? [Message.fromApi(item.lastMessage!, myUserId: myUserId)]
           : [],
@@ -41,6 +48,7 @@ class Conversation extends Equatable {
   final bool hasFireBadge;
   final bool inSecretInbox;
   final ConversationTag tag;
+  final ChatCustomization? customization;
   final List<Message> messages;
 
   bool get isPinnable => !inSecretInbox;
@@ -67,6 +75,7 @@ class Conversation extends Equatable {
     bool? hasFireBadge,
     bool? inSecretInbox,
     ConversationTag? tag,
+    ChatCustomization? customization,
     List<Message>? messages,
   }) {
     return Conversation(
@@ -79,6 +88,7 @@ class Conversation extends Equatable {
       hasFireBadge: hasFireBadge ?? this.hasFireBadge,
       inSecretInbox: inSecretInbox ?? this.inSecretInbox,
       tag: tag ?? this.tag,
+      customization: customization ?? this.customization,
       messages: messages ?? this.messages,
     );
   }
@@ -94,6 +104,7 @@ class Conversation extends Equatable {
     hasFireBadge,
     inSecretInbox,
     tag,
+    customization,
     messages,
   ];
 }
