@@ -154,7 +154,7 @@ class _ChatViewState extends ConsumerState<_ChatView> {
             replyingTo: state.replyingTo,
             onCancelReply: () => chatNotifier.setReplyingTo(null),
             onSendText: (text) => chatNotifier.sendText(text),
-            onSendImage: (path) => chatNotifier.sendText('[Image attached]'),
+            onSendImage: (path) => chatNotifier.sendImage(path),
             onSendVoice: (path, dur) => chatNotifier.sendVoiceNote(path, dur),
             onTyping: (isTyping) => chatNotifier.emitTyping(isTyping),
             onOpenAura: () => ChatMoodSheet.show(
