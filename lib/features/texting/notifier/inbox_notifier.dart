@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/di/locator.dart';
+import '../../auth/notifier/session_notifier.dart';
 import '../models/message.dart';
 import '../repository/texting_repository.dart';
 import '../services/texting_socket_service.dart';
@@ -16,7 +17,7 @@ final textingSocketServiceProvider = Provider<TextingSocketService>((ref) {
 });
 
 final myUserIdProvider = Provider<String>((ref) {
-  return 'me';
+  return ref.watch(currentUserProvider)?.id ?? '';
 });
 
 final inboxNotifierProvider =
