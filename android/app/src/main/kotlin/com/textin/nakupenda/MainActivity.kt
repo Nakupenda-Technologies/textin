@@ -1,4 +1,4 @@
-package com.textin.app.textin
+package com.textin.nakupenda
 
 import io.flutter.embedding.android.FlutterActivity
 
