@@ -10,7 +10,10 @@ import 'package:textin/core/storage/session_store.dart';
 import 'package:textin/core/storage/shared_pref_keys.dart';
 import 'package:textin/features/auth/data_source/auth_remote_data_source.dart';
 import 'package:textin/features/auth/presentation/pages/create_account_screen.dart';
+import 'package:textin/features/auth/presentation/pages/forgot_password_screen.dart';
 import 'package:textin/features/auth/presentation/pages/login_screen.dart';
+import 'package:textin/features/auth/presentation/pages/new_password_screen.dart';
+import 'package:textin/features/auth/presentation/pages/reset_code_screen.dart';
 import 'package:textin/features/launch/presentation/pages/launch_screen.dart';
 import 'package:textin/features/onboarding/presentation/pages/onboarding_screen.dart';
 import 'package:textin/services/local_storage_service.dart';
@@ -153,5 +156,50 @@ void main() {
 
     expect(find.byType(CreateAccountScreen), findsOneWidget);
     expect(find.text('Create Profile'), findsOneWidget);
+  });
+
+  testWidgets('forgotten password resets and returns to sign in', (
+    tester,
+  ) async {
+    final remote = await _bootstrap(
+      prefs: {SharedPrefKeys.onboardingSeen: true},
+    );
+    _usePhoneViewport(tester);
+    await tester.pumpWidget(const TextinApp());
+    await _settleFrames(tester);
+
+    await tester.enterText(find.byType(TextField).at(0), 'slim@example.com');
+    await tester.tap(find.text('Forgotten Password?'));
+    await _settleFrames(tester, 2);
+
+    expect(find.byType(ForgotPasswordScreen), findsOneWidget);
+    expect(find.text('slim@example.com'), findsOneWidget);
+
+    await tester.tap(find.text('Next Step'));
+    await _settleFrames(tester, 2);
+
+    expect(find.byType(ResetCodeScreen), findsOneWidget);
+    expect(remote.resetRequests, ['slim@example.com']);
+
+    await tester.enterText(find.byType(TextField), '123456');
+    await _settleFrames(tester, 2);
+
+    expect(find.byType(NewPasswordScreen), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).at(0), 'newpass12');
+    await tester.enterText(find.byType(TextField).at(1), 'newpass12');
+    await tester.pump();
+    await tester.tap(find.text('Change Password'));
+    await _settleFrames(tester, 3);
+
+    expect(remote.lastReset?.code, '123456');
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(
+      find.text(
+        'Your password has been changed. Sign in with your new password.',
+      ),
+      findsOneWidget,
+    );
+    await tester.pump(const Duration(seconds: 2));
   });
 }

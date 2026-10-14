@@ -8,6 +8,7 @@ import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../notifier/login_notifier.dart';
+import '../../notifier/password_reset_notifier.dart';
 import '../../notifier/registration_notifier.dart';
 import '../widgets/auth_brand_header.dart';
 import '../widgets/password_visibility_button.dart';
@@ -52,6 +53,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     Navigator.of(
       context,
     ).pushNamedAndRemoveUntil(AppRouter.inbox, (_) => false);
+  }
+
+  void _openForgotPassword() {
+    ref.read(passwordResetNotifierProvider.notifier).begin();
+    final identifier = _identifierController.text.trim();
+    Navigator.of(context).pushNamed(
+      AppRouter.forgotPassword,
+      arguments: identifier.contains('@') ? identifier : null,
+    );
   }
 
   void _openSignUp() {
@@ -134,7 +144,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: state.isSubmitting ? null : _openForgotPassword,
+                  style: TextButton.styleFrom(
+                    foregroundColor: muted,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 8,
+                    ),
+                    textStyle: const TextStyle(
+                      fontFamily: AppTheme.bodyFont,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: const Text('Forgotten Password?'),
+                ),
+              ),
+              const SizedBox(height: 20),
               ListenableBuilder(
                 listenable: Listenable.merge([
                   _identifierController,
