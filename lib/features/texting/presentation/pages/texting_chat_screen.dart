@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../models/conversation.dart';
@@ -55,6 +56,12 @@ class _ChatViewState extends ConsumerState<_ChatView> {
     });
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
@@ -75,102 +82,25 @@ class _ChatViewState extends ConsumerState<_ChatView> {
 
     final state = ref.watch(chatNotifierProvider(widget.args));
     final chatNotifier = ref.read(chatNotifierProvider(widget.args).notifier);
-
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkChatAreaBg : AppTheme.chatAreaBg,
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: cs.onSurface.withValues(alpha: 0.10),
-              backgroundImage: widget.conversation.avatarUrl != null
-                  ? CachedNetworkImageProvider(widget.conversation.avatarUrl!)
-                  : null,
-              child: widget.conversation.avatarUrl == null
-                  ? Text(
-                      widget.conversation.name.isNotEmpty
-                          ? widget.conversation.name[0].toUpperCase()
-                          : '?',
-                      style: TextStyle(
-                        color: cs.onSurface.withValues(alpha: 0.55),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.conversation.name,
-                    style: AppTextStyle.heading3.copyWith(fontSize: 16),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (state.isOtherUserTyping)
-                    const Text(
-                      'typing...',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppTheme.red,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    )
-                  else
-                    Text(
-                      widget.conversation.isOnline ? 'Online' : 'Offline',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: widget.conversation.isOnline
-                            ? AppTheme.textingOnlineDot
-                            : cs.onSurface.withValues(alpha: 0.55),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.videocam_outlined),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Video calling is coming soon!')),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.call_outlined),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Audio calling is coming soon!')),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {},
-          ),
-        ],
+      appBar: _ChatHeader(
+        conversation: widget.conversation,
+        isTyping: state.isOtherUserTyping,
       ),
       body: Column(
         children: [
           Expanded(
             child: Builder(
               builder: (context) {
-                if (state.status == ChatStatus.loading && state.messages.isEmpty) {
+                if (state.status == ChatStatus.loading &&
+                    state.messages.isEmpty) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                if (state.messages.isEmpty) {
+                if (state.messages.isEmpty && !state.isOtherUserTyping) {
                   return Center(
                     child: Text(
                       'No messages yet 💬',
@@ -179,17 +109,32 @@ class _ChatViewState extends ConsumerState<_ChatView> {
                   );
                 }
 
+                final messages = state.messages;
                 return ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  itemCount: state.messages.length,
+                  itemCount:
+                      messages.length + (state.isOtherUserTyping ? 1 : 0),
                   itemBuilder: (context, index) {
-                    final msg = state.messages[index];
-                    return MessageBubble(
-                      message: msg,
-                      onReply: () {
-                        chatNotifier.setReplyingTo(msg);
-                      },
+                    if (index == messages.length) {
+                      return const _TypingIndicator();
+                    }
+
+                    final msg = messages[index];
+                    final startsNewDay = index == 0 ||
+                        !DateUtils.isSameDay(
+                          messages[index - 1].timestamp,
+                          msg.timestamp,
+                        );
+
+                    return Column(
+                      children: [
+                        if (startsNewDay) _DayChip(date: msg.timestamp),
+                        MessageBubble(
+                          message: msg,
+                          onReply: () => chatNotifier.setReplyingTo(msg),
+                        ),
+                      ],
                     );
                   },
                 );
@@ -206,6 +151,274 @@ class _ChatViewState extends ConsumerState<_ChatView> {
             onTyping: (isTyping) => chatNotifier.emitTyping(isTyping),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ChatHeader extends StatelessWidget implements PreferredSizeWidget {
+  const _ChatHeader({required this.conversation, required this.isTyping});
+
+  final Conversation conversation;
+  final bool isTyping;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(72);
+
+  String? get _subtitle {
+    if (isTyping) return 'typing...';
+    if (conversation.isOnline) return 'Online';
+    final lastSeen = conversation.lastSeen;
+    if (lastSeen == null) return null;
+
+    final diff = DateTime.now().difference(lastSeen);
+    final ago = diff.inMinutes < 1
+        ? 'just now'
+        : diff.inMinutes < 60
+            ? '${diff.inMinutes}m ago'
+            : diff.inHours < 24
+                ? '${diff.inHours}h ago'
+                : '${diff.inDays}d ago';
+    return 'Last Seen - $ago';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+    final subtitle = _subtitle;
+
+    return Material(
+      color: cs.surface,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          child: Row(
+            children: [
+              _HeaderButton(
+                icon: Icons.arrow_back,
+                onTap: () => Navigator.of(context).maybePop(),
+              ),
+              const SizedBox(width: 12),
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: cs.onSurface.withValues(alpha: 0.10),
+                backgroundImage: conversation.avatarUrl != null
+                    ? CachedNetworkImageProvider(conversation.avatarUrl!)
+                    : null,
+                child: conversation.avatarUrl == null
+                    ? Text(
+                        conversation.name.isNotEmpty
+                            ? conversation.name[0].toUpperCase()
+                            : '?',
+                        style: TextStyle(
+                          color: cs.onSurface.withValues(alpha: 0.55),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            conversation.name,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? cs.onSurface : AppTheme.subtitle,
+                            ),
+                          ),
+                        ),
+                        if (conversation.hasFireBadge) ...[
+                          const SizedBox(width: 4),
+                          const Text('🔥', style: TextStyle(fontSize: 12)),
+                        ],
+                      ],
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 10,
+                          letterSpacing: -0.04,
+                          fontStyle:
+                              isTyping ? FontStyle.italic : FontStyle.normal,
+                          color: isTyping
+                              ? AppTheme.textingSentBubble
+                              : AppTheme.iconColor,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              _HeaderButton(
+                icon: Icons.call,
+                outlined: true,
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Audio calling is coming soon!'),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
+              _HeaderButton(icon: Icons.more_vert, onTap: () {}),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderButton extends StatelessWidget {
+  const _HeaderButton({
+    required this.icon,
+    required this.onTap,
+    this.outlined = false,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool outlined;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+
+    return Material(
+      color: outlined
+          ? cs.surface
+          : (isDark ? AppTheme.darkSurface2 : AppTheme.insideGrey),
+      shape: CircleBorder(
+        side: outlined
+            ? BorderSide(color: isDark ? AppTheme.darkBorder : AppTheme.grayBg)
+            : BorderSide.none,
+      ),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(icon, size: 20, color: cs.onSurface),
+        ),
+      ),
+    );
+  }
+}
+
+class _DayChip extends StatelessWidget {
+  const _DayChip({required this.date});
+
+  final DateTime date;
+
+  String get _label {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final day = DateUtils.dateOnly(date);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return 'TODAY';
+    if (diff == 1) return 'YESTERDAY';
+    return DateFormat('d MMM y').format(date).toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppTheme.darkTextingDateChipBg
+              : AppTheme.textingDateChipBg,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          _label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: isDark ? cs.onSurface : AppTheme.textingDateChipFg,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TypingIndicator extends StatefulWidget {
+  const _TypingIndicator();
+
+  @override
+  State<_TypingIndicator> createState() => _TypingIndicatorState();
+}
+
+class _TypingIndicatorState extends State<_TypingIndicator>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppTheme.darkTextingReceivedBubble
+              : AppTheme.textingReceivedBubble,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) => Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var i = 0; i < 3; i++)
+                Container(
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppTheme.red.withValues(
+                      alpha: ((_controller.value * 3 - i) % 3) < 1 ? 1 : 0.4,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
