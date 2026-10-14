@@ -241,6 +241,45 @@ class ChatNotifier extends StateNotifier<ChatState> {
     );
   }
 
+  Future<void> sendImage(String filePath) async {
+    final replyId = state.replyingTo?.id;
+    final optimisticMsg = Message(
+      id: 'local_${DateTime.now().millisecondsSinceEpoch}',
+      content: '',
+      type: MessageType.image,
+      isMe: true,
+      timestamp: DateTime.now(),
+      localMediaPath: filePath,
+      replyToId: replyId,
+      status: MessageStatus.pending,
+    );
+
+    state = state.copyWith(
+      messages: [...state.messages, optimisticMsg],
+      clearReplyingTo: true,
+    );
+
+    final result = await repository.sendImageMessage(
+      chatId,
+      filePath,
+      replyToId: replyId,
+      myUserId: myUserId,
+    );
+
+    result.fold(
+      (failure) {
+        final updated = state.messages.map((m) {
+          if (m.id == optimisticMsg.id) {
+            return m.copyWith(status: MessageStatus.failed);
+          }
+          return m;
+        }).toList();
+        state = state.copyWith(messages: updated, errorMessage: failure.message);
+      },
+      (sentMsg) => _confirmSent(optimisticMsg, sentMsg),
+    );
+  }
+
   void _confirmSent(Message optimistic, Message sent) {
     if (!state.messages.any((m) => m.id == optimistic.id)) return;
 

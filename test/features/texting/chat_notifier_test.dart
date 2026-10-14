@@ -56,6 +56,30 @@ class _UploadingRepository extends MockTextingRepository {
   }
 }
 
+class _ImageUploadingRepository extends MockTextingRepository {
+  String? sentPath;
+
+  @override
+  Future<Either<Failure, Message>> sendImageMessage(
+    String chatId,
+    String filePath, {
+    String? replyToId,
+    required String myUserId,
+  }) async {
+    sentPath = filePath;
+    return Right(
+      Message(
+        id: 'server_image',
+        content: '',
+        type: MessageType.image,
+        isMe: true,
+        timestamp: DateTime(2026, 10, 14, 18, 27),
+        mediaUrl: 'https://cdn.test/photo.jpg',
+      ),
+    );
+  }
+}
+
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -108,6 +132,28 @@ void main() {
     expect(sent.mediaUrl, 'https://cdn.test/voice.m4a');
     expect(sent.localMediaPath, '/tmp/voice.m4a');
     expect(sent.voiceDuration, const Duration(seconds: 6));
+    expect(sent.status, MessageStatus.sent);
+  });
+
+  test('an image sends the picked file and keeps the uploaded url', () async {
+    final repository = _ImageUploadingRepository();
+    final notifier = ChatNotifier(
+      chatId: 'chat_1',
+      otherUserId: 'other',
+      myUserId: 'me',
+      repository: repository,
+      socketService: TextingSocketService(WebSocketService()),
+    );
+    addTearDown(notifier.dispose);
+
+    await notifier.sendImage('/tmp/photo.jpg');
+
+    final sent = notifier.state.messages.single;
+    expect(repository.sentPath, '/tmp/photo.jpg');
+    expect(sent.id, 'server_image');
+    expect(sent.type, MessageType.image);
+    expect(sent.mediaUrl, 'https://cdn.test/photo.jpg');
+    expect(sent.localMediaPath, '/tmp/photo.jpg');
     expect(sent.status, MessageStatus.sent);
   });
 }
