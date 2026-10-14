@@ -1,8 +1,8 @@
+import 'dart:math';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
-import '../../../../core/theme/colors.dart';
-import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../models/message.dart';
 
@@ -64,6 +64,12 @@ class _MessageBubbleState extends State<MessageBubble> {
     }
   }
 
+  double get _playbackProgress {
+    final total = widget.message.voiceDuration?.inMilliseconds ?? 0;
+    if (total <= 0) return 0;
+    return (_position.inMilliseconds / total).clamp(0.0, 1.0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMe = widget.message.isMe;
@@ -72,68 +78,80 @@ class _MessageBubbleState extends State<MessageBubble> {
 
     final bubbleBg = isMe
         ? AppTheme.textingSentBubble
-        : (isDark ? AppTheme.darkTextingReceivedBubble : Colors.white);
-    final textFg = isMe ? const Color(0xFF163917) : cs.onSurface;
-    final timeFg = isMe
-        ? const Color(0xFF163917).withValues(alpha: 0.65)
-        : cs.onSurface.withValues(alpha: 0.55);
+        : (isDark
+            ? AppTheme.darkTextingReceivedBubble
+            : AppTheme.textingReceivedBubble);
+    final fg = isMe
+        ? Colors.white
+        : (isDark ? cs.onSurface : AppTheme.textingReceivedText);
 
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        decoration: BoxDecoration(
-          color: bubbleBg,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(isMe ? 16 : 4),
-            bottomRight: Radius.circular(isMe ? 4 : 16),
-          ),
-          border: isMe
-              ? null
-              : Border.all(
-                  color: isDark
-                      ? AppTheme.darkBorder
-                      : const Color(0xFFDDDEE2),
-                ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    return GestureDetector(
+      onLongPress: widget.onReply,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         child: Column(
           crossAxisAlignment:
               isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            if (widget.message.type == MessageType.image &&
-                widget.message.mediaUrl != null)
-              _buildImageMessage(widget.message.mediaUrl!),
-            if (widget.message.type == MessageType.voice)
-              _buildVoiceMessage(isMe),
-            if (widget.message.content.isNotEmpty)
-              Text(
-                widget.message.content,
-                style: AppTextStyle.body.copyWith(
-                  color: textFg,
-                ),
+            Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.8,
               ),
-            const SizedBox(height: 4),
+              decoration: BoxDecoration(
+                color: bubbleBg,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(24),
+                  topRight: const Radius.circular(24),
+                  bottomLeft: Radius.circular(isMe ? 24 : 4),
+                  bottomRight: Radius.circular(isMe ? 4 : 24),
+                ),
+                border: isMe
+                    ? null
+                    : Border.all(
+                        width: 0.5,
+                        color: isDark
+                            ? AppTheme.darkPinkBorder
+                            : AppTheme.pinkborder,
+                      ),
+              ),
+              padding: widget.message.type == MessageType.voice
+                  ? const EdgeInsets.fromLTRB(8, 8, 16, 8)
+                  : const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+              child: Column(
+                crossAxisAlignment:
+                    isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.message.type == MessageType.image &&
+                      widget.message.mediaUrl != null)
+                    _buildImageMessage(widget.message.mediaUrl!),
+                  if (widget.message.type == MessageType.voice)
+                    _buildVoiceMessage(isMe, fg),
+                  if (widget.message.type != MessageType.voice &&
+                      widget.message.content.isNotEmpty)
+                    Text(
+                      widget.message.content,
+                      style: TextStyle(
+                        fontSize: 15,
+                        height: 22 / 15,
+                        fontWeight: FontWeight.w600,
+                        color: fg,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   widget.message.formattedTime,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: timeFg,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.41,
+                    color: AppTheme.textingTimestamp,
                   ),
                 ),
                 if (isMe) ...[
@@ -150,9 +168,9 @@ class _MessageBubbleState extends State<MessageBubble> {
 
   Widget _buildImageMessage(String url) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
+      margin: const EdgeInsets.symmetric(vertical: 6),
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
       child: CachedNetworkImage(
         imageUrl: url,
         placeholder: (ctx, _) => Container(
@@ -169,42 +187,36 @@ class _MessageBubbleState extends State<MessageBubble> {
     );
   }
 
-  Widget _buildVoiceMessage(bool isMe) {
-    final durationText = widget.message.formattedDuration;
-    final fg = isMe ? const Color(0xFF163917) : Theme.of(context).colorScheme.primary;
-
+  Widget _buildVoiceMessage(bool isMe, Color fg) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          icon: Icon(
-            _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
-            color: fg,
-            size: 32,
-          ),
-          onPressed: _toggleVoicePlayback,
-        ),
-        const SizedBox(width: 4),
-        Expanded(
-          child: LinearProgressIndicator(
-            value: widget.message.voiceDuration != null &&
-                    widget.message.voiceDuration!.inMilliseconds > 0
-                ? (_position.inMilliseconds /
-                        widget.message.voiceDuration!.inMilliseconds)
-                    .clamp(0.0, 1.0)
-                : 0.0,
-            backgroundColor: isMe
-                ? const Color(0xFF163917).withValues(alpha: 0.2)
-                : AppColors.primary.withValues(alpha: 0.15),
-            valueColor: AlwaysStoppedAnimation<Color>(fg),
+        GestureDetector(
+          onTap: _toggleVoicePlayback,
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
+            child: Icon(
+              _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+              size: 20,
+              color: isMe ? AppTheme.textingSentBubble : Colors.white,
+            ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
+        _Waveform(
+          seed: widget.message.id.hashCode,
+          progress: _playbackProgress,
+          color: fg,
+        ),
+        const SizedBox(width: 12),
         Text(
-          durationText,
+          widget.message.formattedDuration,
           style: TextStyle(
             fontSize: 12,
-            color: isMe ? const Color(0xFF163917) : AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+            color: fg.withValues(alpha: 0.8),
           ),
         ),
       ],
@@ -214,25 +226,61 @@ class _MessageBubbleState extends State<MessageBubble> {
   Widget _buildStatusIndicator() {
     switch (widget.message.status) {
       case MessageStatus.pending:
-        return Icon(
+        return const Icon(
           Icons.access_time,
-          size: 13,
-          color: const Color(0xFF163917).withValues(alpha: 0.55),
+          size: 12,
+          color: AppTheme.textingTimestamp,
         );
       case MessageStatus.failed:
         return const Icon(
           Icons.error_outline,
-          size: 13,
-          color: Colors.redAccent,
+          size: 12,
+          color: AppTheme.red,
         );
       case MessageStatus.sent:
         return Icon(
           widget.message.isRead ? Icons.done_all : Icons.done,
           size: 14,
-          color: widget.message.isRead
-              ? AppTheme.textingSendBtn
-              : const Color(0xFF163917).withValues(alpha: 0.55),
+          color: AppTheme.textingTimestamp,
         );
     }
+  }
+}
+
+class _Waveform extends StatelessWidget {
+  const _Waveform({
+    required this.seed,
+    required this.progress,
+    required this.color,
+  });
+
+  static const _barCount = 28;
+
+  final int seed;
+  final double progress;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final random = Random(seed);
+    final played = (progress * _barCount).round();
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < _barCount; i++)
+          Container(
+            width: 2,
+            height: 4 + random.nextDouble() * 20,
+            margin: const EdgeInsets.symmetric(horizontal: 1),
+            decoration: BoxDecoration(
+              color: progress > 0 && i >= played
+                  ? color.withValues(alpha: 0.45)
+                  : color,
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+      ],
+    );
   }
 }
