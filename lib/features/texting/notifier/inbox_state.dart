@@ -49,8 +49,8 @@ class InboxState extends Equatable {
       if (a.isPinned != b.isPinned) {
         return a.isPinned ? -1 : 1;
       }
-      final aTime = a.lastMessage?.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
-      final bTime = b.lastMessage?.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final aTime = a.lastMessage?.timestamp ?? a.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bTime = b.lastMessage?.timestamp ?? b.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
       return bTime.compareTo(aTime);
     });
 

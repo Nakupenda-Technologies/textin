@@ -11,6 +11,7 @@ class Conversation extends Equatable {
     required this.name,
     this.avatarUrl,
     this.lastSeen,
+    this.updatedAt,
     this.isPinned = false,
     this.isOnline = false,
     this.hasFireBadge = false,
@@ -29,6 +30,7 @@ class Conversation extends Equatable {
       name: item.otherUser.displayName,
       avatarUrl: item.otherUser.profilePictureUrl,
       lastSeen: item.otherUser.lastSeen,
+      updatedAt: item.updatedAt,
       isPinned: item.isPinned,
       inSecretInbox: item.inSecretInbox,
       tag: customization?.mood ?? ConversationTag.none,
@@ -43,6 +45,7 @@ class Conversation extends Equatable {
   final String name;
   final String? avatarUrl;
   final DateTime? lastSeen;
+  final DateTime? updatedAt;
   final bool isPinned;
   final bool isOnline;
   final bool hasFireBadge;
@@ -58,8 +61,9 @@ class Conversation extends Equatable {
   int get unreadCount => messages.where((m) => !m.isMe && !m.isRead).length;
 
   String get timeAgo {
-    if (lastMessage == null) return '';
-    final diff = DateTime.now().difference(lastMessage!.timestamp);
+    final at = lastMessage?.timestamp ?? updatedAt;
+    if (at == null) return '';
+    final diff = DateTime.now().difference(at);
     if (diff.inMinutes < 60) return '${diff.inMinutes}m';
     if (diff.inHours < 24) return '${diff.inHours}h';
     return '${diff.inDays}d';
@@ -70,6 +74,7 @@ class Conversation extends Equatable {
     String? name,
     String? avatarUrl,
     DateTime? lastSeen,
+    DateTime? updatedAt,
     bool? isPinned,
     bool? isOnline,
     bool? hasFireBadge,
@@ -83,6 +88,7 @@ class Conversation extends Equatable {
       name: name ?? this.name,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       lastSeen: lastSeen ?? this.lastSeen,
+      updatedAt: updatedAt ?? this.updatedAt,
       isPinned: isPinned ?? this.isPinned,
       isOnline: isOnline ?? this.isOnline,
       hasFireBadge: hasFireBadge ?? this.hasFireBadge,
@@ -99,6 +105,7 @@ class Conversation extends Equatable {
     name,
     avatarUrl,
     lastSeen,
+    updatedAt,
     isPinned,
     isOnline,
     hasFireBadge,
