@@ -73,7 +73,7 @@ class _TextingComposerState extends State<TextingComposer> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -89,90 +89,102 @@ class _TextingComposerState extends State<TextingComposer> {
           children: [
             if (widget.replyingTo != null) _buildReplyPreview(),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Builder(
-                builder: (context) {
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
-                  final cs = Theme.of(context).colorScheme;
-
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.add_photo_alternate_outlined),
-                        color: cs.onSurface.withValues(alpha: 0.55),
-                        onPressed: _pickImage,
-                      ),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? AppTheme.darkTextingInputBg
-                                : AppTheme.textingInputBg,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: isDark ? AppTheme.darkBorder : AppTheme.border,
-                            ),
-                          ),
-                          child: TextField(
-                            controller: _controller,
-                            maxLines: 4,
-                            minLines: 1,
-                            textCapitalization: TextCapitalization.sentences,
-                            onChanged: (text) {
-                              final composing = text.trim().isNotEmpty;
-                              if (composing != _isComposing) {
-                                setState(() => _isComposing = composing);
-                                widget.onTyping(composing);
-                              }
-                            },
-                            decoration: InputDecoration(
-                              hintText: 'Type a message...',
-                              hintStyle: TextStyle(
-                                color: cs.onSurface.withValues(alpha: 0.45),
-                                fontSize: 14,
-                              ),
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: _isComposing
-                              ? AppTheme.textingSendBtn
-                              : cs.onSurface.withValues(alpha: 0.12),
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          icon: SvgPicture.asset(
-                            'assets/svgs/send_icon.svg',
-                            width: 18,
-                            height: 18,
-                            colorFilter: ColorFilter.mode(
-                              _isComposing
-                                  ? Colors.white
-                                  : cs.onSurface.withValues(alpha: 0.35),
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _CircleButton(
+                    onTap: _pickImage,
+                    child: const Icon(
+                      Icons.add,
+                      size: 20,
+                      color: AppTheme.textingSendBtn,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildInput()),
+                  const SizedBox(width: 8),
+                  _CircleButton(
+                    onTap: _isComposing ? _handleSend : null,
+                    child: SvgPicture.asset(
+                      'assets/svgs/send_icon.svg',
+                      width: 18,
+                      height: 18,
+                      colorFilter: _isComposing
+                          ? null
+                          : const ColorFilter.mode(
+                              AppTheme.textingTimestamp,
                               BlendMode.srcIn,
                             ),
-                          ),
-                          onPressed: _isComposing ? _handleSend : null,
-                        ),
-                      ),
-                    ],
-                  );
-                },
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildInput() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.only(left: 10, right: 14),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.darkTextingInputBg : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? AppTheme.darkBorder : AppTheme.grayBg,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 11),
+            child: SvgPicture.asset(
+              'assets/svgs/emoji_button_icon.svg',
+              width: 18,
+              height: 18,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              maxLines: 4,
+              minLines: 1,
+              textCapitalization: TextCapitalization.sentences,
+              style: TextStyle(
+                fontSize: 12,
+                height: 20 / 12,
+                fontWeight: FontWeight.w500,
+                color: cs.onSurface,
+              ),
+              onChanged: (text) {
+                final composing = text.trim().isNotEmpty;
+                if (composing != _isComposing) {
+                  setState(() => _isComposing = composing);
+                  widget.onTyping(composing);
+                }
+              },
+              decoration: InputDecoration(
+                hintText: 'Type a message...',
+                hintStyle: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: cs.onSurface.withValues(alpha: 0.45),
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -222,6 +234,28 @@ class _TextingComposerState extends State<TextingComposer> {
             onPressed: widget.onCancelReply,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CircleButton extends StatelessWidget {
+  const _CircleButton({required this.child, this.onTap});
+
+  final Widget child;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: isDark ? AppTheme.darkSurface2 : AppTheme.insideGrey,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(width: 40, height: 40, child: Center(child: child)),
       ),
     );
   }
