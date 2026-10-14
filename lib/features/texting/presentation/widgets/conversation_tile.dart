@@ -44,22 +44,30 @@ class ConversationTile extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Flexible(
-                        child: Text(
-                          conversation.name,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? cs.onSurface : AppTheme.subtitle,
-                          ),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                conversation.name,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? cs.onSurface
+                                      : AppTheme.subtitle,
+                                ),
+                              ),
+                            ),
+                            if (conversation.hasFireBadge) ...[
+                              const SizedBox(width: 4),
+                              const Text('🔥', style: TextStyle(fontSize: 12)),
+                            ],
+                          ],
                         ),
                       ),
-                      if (conversation.hasFireBadge) ...[
-                        const SizedBox(width: 4),
-                        const Text('🔥', style: TextStyle(fontSize: 12)),
-                      ],
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       Text(
                         conversation.timeAgo,
                         style: TextStyle(
