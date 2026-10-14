@@ -1,14 +1,17 @@
 import '../../../config/env/env.dart';
-import '../../../core/storage/shared_preferences_store.dart';
 import '../../../services/websocket_service.dart';
 
 class TextingSocketService {
-  TextingSocketService(this._ws);
+  TextingSocketService(this._ws, {String? Function()? accessToken})
+    : _accessToken = accessToken ?? _noToken;
 
   final WebSocketService _ws;
+  final String? Function() _accessToken;
+
+  static String? _noToken() => null;
 
   void connect({required void Function() onConnect}) {
-    final token = SharedPreferencesStore.getAuthToken() ?? '';
+    final token = _accessToken() ?? '';
     final url = '${Env.websocketBaseUrl}/messaging';
     _ws.setOnConnectCallback(onConnect);
     _ws.connect(

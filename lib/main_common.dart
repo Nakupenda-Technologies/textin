@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'app/app.dart';
 import 'bootstrap.dart';
 import 'core/di/locator.dart';
+import 'core/storage/session_store.dart';
 import 'services/connectivity_service.dart';
 import 'services/local_storage_service.dart';
 
@@ -45,10 +46,7 @@ Future<void> mainCommon() async {
   }
 
   await setupLocator();
+  await locator<SessionStore>().load();
 
-  runApp(
-    const TextinApp(
-      observers: [AppProviderObserver()],
-    ),
-  );
+  runApp(const TextinApp(observers: [AppProviderObserver()]));
 }

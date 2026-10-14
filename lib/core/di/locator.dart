@@ -8,22 +8,41 @@ import '../../features/texting/repository/texting_repository_impl.dart';
 import '../../features/texting/services/texting_socket_service.dart';
 import '../../services/websocket_service.dart';
 import '../network/client.dart';
+import '../network/session_manager.dart';
+import '../storage/session_store.dart';
 
 final locator = GetIt.instance;
 
 Future<void> setupLocator() async {
-  locator.registerLazySingleton<BaseApiClients>(
-    () => BaseApiClients(baseUrl: Env.baseUrl),
+  locator.registerLazySingleton<SessionStore>(SessionStore.new);
+  locator.registerLazySingleton<SessionManager>(
+    () => SessionManager(
+      store: locator<SessionStore>(),
+      authBaseUrl: Env.baseUrl,
+    ),
   );
 
   locator.registerLazySingleton<BaseApiClients>(
-    () => BaseApiClients(baseUrl: Env.messagingBaseUrl),
+    () => BaseApiClients(
+      baseUrl: Env.baseUrl,
+      session: locator<SessionManager>(),
+    ),
+  );
+
+  locator.registerLazySingleton<BaseApiClients>(
+    () => BaseApiClients(
+      baseUrl: Env.messagingBaseUrl,
+      session: locator<SessionManager>(),
+    ),
     instanceName: 'messaging',
   );
 
   locator.registerLazySingleton<WebSocketService>(() => WebSocketService());
   locator.registerLazySingleton<TextingSocketService>(
-    () => TextingSocketService(locator<WebSocketService>()),
+    () => TextingSocketService(
+      locator<WebSocketService>(),
+      accessToken: () => locator<SessionStore>().accessToken,
+    ),
   );
 
   locator.registerLazySingleton<TextingRemoteDataSource>(
