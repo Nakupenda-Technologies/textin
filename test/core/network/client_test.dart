@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -148,5 +149,37 @@ void main() {
     );
 
     await expectLater(client.get('/currents'), throwsA(isA<NetworkFailure>()));
+  });
+  test('uploads a file as multipart with the bearer token', () async {
+    await store.save(
+      const AuthTokens(accessToken: 'token', refreshToken: 'refresh-1'),
+    );
+    final dir = await Directory.systemTemp.createTemp();
+    addTearDown(() => dir.delete(recursive: true));
+    final file = File('${dir.path}/voice.m4a')..writeAsBytesSync([1, 2, 3]);
+
+    late http.Request sent;
+    final client = buildClient((request) async {
+      sent = request;
+      return _json({
+        'data': {'url': 'https://cdn.test/voice.m4a'},
+      }, 201);
+    });
+
+    final response = await client.upload(
+      '/media/upload/messaging',
+      field: 'file',
+      filePath: file.path,
+      contentType: 'audio/mp4',
+    );
+
+    expect(response, {
+      'data': {'url': 'https://cdn.test/voice.m4a'},
+    });
+    expect(sent.headers['Authorization'], 'Bearer token');
+    expect(sent.headers['content-type'], startsWith('multipart/form-data'));
+    final body = latin1.decode(sent.bodyBytes);
+    expect(body, contains('name="file"; filename="voice.m4a"'));
+    expect(body, contains('content-type: audio/mp4'));
   });
 }

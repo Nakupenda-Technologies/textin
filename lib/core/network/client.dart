@@ -55,21 +55,58 @@ class BaseApiClients {
     Object? body,
   }) => _send('DELETE', endpoint, headers: headers, body: body);
 
+  Future<dynamic> upload(
+    String endpoint, {
+    required String field,
+    required String filePath,
+    required String contentType,
+  }) {
+    final uri = Uri.parse('$baseUrl$endpoint');
+    return _dispatch(
+      (token) async => http.MultipartRequest('POST', uri)
+        ..headers.addAll(_headers(token, json: false))
+        ..files.add(
+          await http.MultipartFile.fromPath(
+            field,
+            filePath,
+            contentType: http.MediaType.parse(contentType),
+          ),
+        ),
+    );
+  }
+
   Future<dynamic> _send(
     String method,
     String endpoint, {
     Map<String, String>? headers,
     Map<String, dynamic>? queryParameters,
     Object? body,
-  }) async {
+  }) {
     final uri = Uri.parse('$baseUrl$endpoint').replace(
       queryParameters: queryParameters?.map(
         (key, value) => MapEntry(key, value.toString()),
       ),
     );
 
+    return _dispatch((token) async {
+      final request = http.Request(method, uri)
+        ..headers.addAll({..._headers(token), ...?headers});
+      if (body != null) request.body = jsonEncode(body);
+      return request;
+    });
+  }
+
+  Map<String, String> _headers(String? token, {bool json = true}) => {
+    if (json) 'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+  };
+
+  Future<dynamic> _dispatch(
+    Future<http.BaseRequest> Function(String? token) build,
+  ) async {
     final token = await session?.accessTokenForRequest();
-    var response = await _request(method, uri, headers, body, token);
+    var response = await _execute(await build(token));
 
     final activeSession = session;
     if (response.statusCode == 401 &&
@@ -77,13 +114,7 @@ class BaseApiClients {
         token != null &&
         activeSession.canRefresh) {
       await activeSession.refresh();
-      response = await _request(
-        method,
-        uri,
-        headers,
-        body,
-        activeSession.store.accessToken,
-      );
+      response = await _execute(await build(activeSession.store.accessToken));
       if (response.statusCode == 401) {
         await activeSession.expire();
         throw const SessionExpiredFailure();
@@ -93,22 +124,7 @@ class BaseApiClients {
     return _decode(response);
   }
 
-  Future<http.Response> _request(
-    String method,
-    Uri uri,
-    Map<String, String>? headers,
-    Object? body,
-    String? token,
-  ) async {
-    final request = http.Request(method, uri)
-      ..headers.addAll({
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-        ...?headers,
-      });
-    if (body != null) request.body = jsonEncode(body);
-
+  Future<http.Response> _execute(http.BaseRequest request) async {
     try {
       final streamed = await _client.send(request).timeout(timeout);
       return await http.Response.fromStream(streamed).timeout(timeout);
