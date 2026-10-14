@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../../shared/theme/app_theme.dart';
 
-class RegistrationScaffold extends StatelessWidget {
-  const RegistrationScaffold({
+class AuthFormScaffold extends StatelessWidget {
+  const AuthFormScaffold({
     super.key,
-    required this.step,
+    this.step,
     required this.title,
     required this.subtitle,
     required this.action,
@@ -16,7 +16,7 @@ class RegistrationScaffold extends StatelessWidget {
 
   static const int totalSteps = 4;
 
-  final int step;
+  final int? step;
   final String title;
   final String subtitle;
   final Widget action;
@@ -61,7 +61,7 @@ class RegistrationScaffold extends StatelessWidget {
                           label: const Text('Back'),
                         ),
                       const Spacer(),
-                      _StepRing(step: step),
+                      if (step case final step?) _StepRing(step: step),
                     ],
                   ),
                 ),
@@ -131,7 +131,7 @@ class _StepRing extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Semantics(
-      label: 'Step $step of ${RegistrationScaffold.totalSteps}',
+      label: 'Step $step of ${AuthFormScaffold.totalSteps}',
       excludeSemantics: true,
       child: SizedBox.square(
         dimension: 32,
@@ -140,7 +140,7 @@ class _StepRing extends StatelessWidget {
           children: [
             SizedBox.expand(
               child: TweenAnimationBuilder<double>(
-                tween: Tween(end: step / RegistrationScaffold.totalSteps),
+                tween: Tween(end: step / AuthFormScaffold.totalSteps),
                 duration: const Duration(milliseconds: 400),
                 builder: (context, value, _) => CircularProgressIndicator(
                   value: value,

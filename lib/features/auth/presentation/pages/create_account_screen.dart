@@ -7,7 +7,7 @@ import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../notifier/registration_notifier.dart';
-import '../widgets/registration_scaffold.dart';
+import '../widgets/auth_form_scaffold.dart';
 import '../widgets/username_status_icon.dart';
 
 class CreateAccountScreen extends ConsumerStatefulWidget {
@@ -80,7 +80,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     final enabled = !state.isSubmitting;
 
-    return RegistrationScaffold(
+    return AuthFormScaffold(
       step: 1,
       canGoBack: true,
       title: 'Create Profile',

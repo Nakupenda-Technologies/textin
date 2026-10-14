@@ -7,7 +7,7 @@ import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../models/current_item.dart';
 import '../../notifier/registration_notifier.dart';
-import '../widgets/registration_scaffold.dart';
+import '../widgets/auth_form_scaffold.dart';
 
 class PickCurrentsScreen extends ConsumerStatefulWidget {
   const PickCurrentsScreen({super.key});
@@ -63,7 +63,7 @@ class _PickCurrentsScreenState extends ConsumerState<PickCurrentsScreen> {
         if (state.selectedCurrentIds.contains(current.id)) current,
     ];
 
-    return RegistrationScaffold(
+    return AuthFormScaffold(
       step: 4,
       title: 'Select Your Current',
       subtitle:

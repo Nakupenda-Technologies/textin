@@ -8,7 +8,7 @@ import '../../notifier/registration_notifier.dart';
 import '../../validators.dart';
 import '../widgets/password_strength_bar.dart';
 import '../widgets/password_visibility_button.dart';
-import '../widgets/registration_scaffold.dart';
+import '../widgets/auth_form_scaffold.dart';
 
 class CreatePasswordScreen extends ConsumerStatefulWidget {
   const CreatePasswordScreen({super.key});
@@ -56,7 +56,7 @@ class _CreatePasswordScreenState extends ConsumerState<CreatePasswordScreen> {
     final notifier = ref.read(registrationNotifierProvider.notifier);
     final enabled = !state.isSubmitting;
 
-    return RegistrationScaffold(
+    return AuthFormScaffold(
       step: 2,
       canGoBack: true,
       title: 'Secure Your Account',

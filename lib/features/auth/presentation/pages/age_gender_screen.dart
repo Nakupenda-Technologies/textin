@@ -9,7 +9,7 @@ import '../../../../shared/widgets/app_text_field.dart';
 import '../../models/registration_details.dart';
 import '../../notifier/registration_notifier.dart';
 import '../../validators.dart';
-import '../widgets/registration_scaffold.dart';
+import '../widgets/auth_form_scaffold.dart';
 
 class AgeGenderScreen extends ConsumerStatefulWidget {
   const AgeGenderScreen({super.key});
@@ -87,7 +87,7 @@ class _AgeGenderScreenState extends ConsumerState<AgeGenderScreen> {
       context,
     ).colorScheme.onSurface.withValues(alpha: 0.6);
 
-    return RegistrationScaffold(
+    return AuthFormScaffold(
       step: 3,
       title: 'Age & Gender',
       subtitle: 'Fill in your age and gender',
