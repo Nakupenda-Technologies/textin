@@ -284,8 +284,10 @@ class AppTheme {
   );
 
   // ── Texting / Messaging feature ──────────────────────────────────────────
-  static const Color textingSentBubble = Color(0xFFADEFAE);
-  static const Color textingReceivedBubble = Color(0xFFFFFFFF);
+  static const Color textingSentBubble = Color(0xFFFF3D6D);
+  static const Color textingReceivedBubble = Color(0xFFFFF1F4);
+  static const Color textingReceivedText = Color(0xFF5A2A36);
+  static const Color textingTimestamp = Color(0xFFA1A1A1);
   static const Color textingVoiceBubbleReceived = Color(0xFF3A3A3C);
   static const Color textingVoiceBubbleSent = Color(0xFFADEFAE);
   static const Color textingSecretInboxBg = Color(0xFFFFF0F0);
@@ -306,8 +308,8 @@ class AppTheme {
   static const Color textingTagExcitedReceivedBg = Color(0x80DBD8D9);
   static const Color excitingColor = Color(0xFFFFDED2);
 
-  static const Color textingDateChipBg = Color(0xFFE5E7EB);
-  static const Color textingDateChipFg = Color(0xFF6B7280);
+  static const Color textingDateChipBg = Color(0xFFFFFFFF);
+  static const Color textingDateChipFg = Color(0xFF000000);
   static const Color textingInputBg = Color(0xFFF3F4F6);
   static const Color textingSendBtn = Color(0xFF51B754);
   static const Color textingOnlineDot = Color(0xFF22C55E);
