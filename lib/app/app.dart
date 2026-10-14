@@ -26,7 +26,7 @@ class TextinApp extends StatelessWidget {
         darkTheme: AppTheme.dark,
         themeMode: ThemeMode.system,
         onGenerateRoute: AppRouter.onGenerateRoute,
-        initialRoute: AppRouter.inbox,
+        initialRoute: AppRouter.launch,
       ),
     );
   }
