@@ -18,6 +18,14 @@ class ChatMessageApi extends Equatable {
     this.replyToId,
   });
 
+  static Map<String, dynamic> unwrap(Map<String, dynamic> json) {
+    for (final key in const ['message', 'data']) {
+      final nested = json[key];
+      if (nested is Map<String, dynamic>) return nested;
+    }
+    return json;
+  }
+
   factory ChatMessageApi.fromJson(Map<String, dynamic> json) {
     return ChatMessageApi(
       id: json['id'] as String? ?? '',

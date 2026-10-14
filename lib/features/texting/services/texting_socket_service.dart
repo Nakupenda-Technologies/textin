@@ -1,5 +1,6 @@
 import '../../../config/env/env.dart';
 import '../../../services/websocket_service.dart';
+import '../models/api/chat_message_api.dart';
 
 class TextingSocketService {
   TextingSocketService(this._ws, {String? Function()? accessToken})
@@ -35,7 +36,7 @@ class TextingSocketService {
 
   void onNewMessage(void Function(Map<String, dynamic> data) callback) {
     _ws.onEvent('message', (data) {
-      if (data is Map<String, dynamic>) callback(data);
+      if (data is Map<String, dynamic>) callback(ChatMessageApi.unwrap(data));
     });
   }
 

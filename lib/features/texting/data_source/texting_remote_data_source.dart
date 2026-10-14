@@ -98,7 +98,9 @@ class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
         'replyToId': ?replyToId,
       },
     );
-    return ChatMessageApi.fromJson(response as Map<String, dynamic>);
+    return ChatMessageApi.fromJson(
+      ChatMessageApi.unwrap(response as Map<String, dynamic>),
+    );
   }
 
   @override
@@ -117,7 +119,9 @@ class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
         'replyToId': ?replyToId,
       },
     );
-    return ChatMessageApi.fromJson(response as Map<String, dynamic>);
+    return ChatMessageApi.fromJson(
+      ChatMessageApi.unwrap(response as Map<String, dynamic>),
+    );
   }
 
   @override
@@ -134,7 +138,9 @@ class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
         'replyToId': ?replyToId,
       },
     );
-    return ChatMessageApi.fromJson(response as Map<String, dynamic>);
+    return ChatMessageApi.fromJson(
+      ChatMessageApi.unwrap(response as Map<String, dynamic>),
+    );
   }
 
   @override
