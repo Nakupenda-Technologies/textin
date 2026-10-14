@@ -1,11 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/colors.dart';
-import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../models/conversation.dart';
 import '../../models/message.dart';
-
 
 class ConversationTile extends StatelessWidget {
   const ConversationTile({
@@ -27,13 +25,16 @@ class ConversationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasUnread = conversation.unreadCount > 0;
+
     return InkWell(
       onTap: onTap,
       onLongPress: onLongPress ?? () => _showActionMenu(context),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             _Avatar(conversation: conversation),
             const SizedBox(width: 12),
@@ -43,44 +44,35 @@ class ConversationTile extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                conversation.name,
-                                style: AppTextStyle.heading3.copyWith(fontSize: 16),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (conversation.hasFireBadge) ...[
-                              const SizedBox(width: 4),
-                              const Text('🔥', style: TextStyle(fontSize: 14)),
-                            ],
-                            if (conversation.isPinned) ...[
-                              const SizedBox(width: 6),
-                              const Icon(
-                                Icons.push_pin,
-                                size: 14,
-                                color: AppTheme.red,
-                              ),
-                            ],
-                          ],
+                      Flexible(
+                        child: Text(
+                          conversation.name,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? cs.onSurface : AppTheme.subtitle,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      if (conversation.hasFireBadge) ...[
+                        const SizedBox(width: 4),
+                        const Text('🔥', style: TextStyle(fontSize: 12)),
+                      ],
+                      const Spacer(),
                       Text(
                         conversation.timeAgo,
                         style: TextStyle(
-                          fontSize: 12,
-                          color: conversation.unreadCount > 0
-                              ? AppTheme.red
-                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: hasUnread
+                              ? AppTheme.textred
+                              : (isDark ? cs.onSurface : AppTheme.subtitle),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       if (conversation.tag != ConversationTag.none)
@@ -88,14 +80,15 @@ class ConversationTile extends StatelessWidget {
                       Expanded(
                         child: _LastMessageSnippet(conversation: conversation),
                       ),
-                      if (conversation.unreadCount > 0) ...[
+                      if (hasUnread) ...[
                         const SizedBox(width: 8),
                         Container(
-                          width: 20,
-                          height: 20,
-                          decoration: const BoxDecoration(
-                            color: AppTheme.red,
-                            shape: BoxShape.circle,
+                          constraints: const BoxConstraints(minWidth: 16),
+                          height: 16,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.textred,
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           alignment: Alignment.center,
                           child: Text(
@@ -104,8 +97,8 @@ class ConversationTile extends StatelessWidget {
                                 : conversation.unreadCount.toString(),
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
@@ -133,7 +126,9 @@ class ConversationTile extends StatelessWidget {
           children: [
             ListTile(
               leading: Icon(
-                conversation.isPinned ? Icons.push_pin_outlined : Icons.push_pin,
+                conversation.isPinned
+                    ? Icons.push_pin_outlined
+                    : Icons.push_pin,
                 color: AppColors.primary,
               ),
               title: Text(conversation.isPinned ? 'Unpin chat' : 'Pin chat'),
@@ -144,7 +139,9 @@ class ConversationTile extends StatelessWidget {
             ),
             ListTile(
               leading: Icon(
-                conversation.inSecretInbox ? Icons.lock_open : Icons.lock_outline,
+                conversation.inSecretInbox
+                    ? Icons.lock_open
+                    : Icons.lock_outline,
                 color: AppColors.primary,
               ),
               title: Text(
@@ -159,7 +156,10 @@ class ConversationTile extends StatelessWidget {
             ),
             if (conversation.unreadCount > 0)
               ListTile(
-                leading: const Icon(Icons.mark_chat_read, color: AppColors.success),
+                leading: const Icon(
+                  Icons.mark_chat_read,
+                  color: AppColors.success,
+                ),
                 title: const Text('Mark as read'),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -184,36 +184,48 @@ class _Avatar extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        CircleAvatar(
-          radius: 26,
-          backgroundColor: cs.onSurface.withValues(alpha: 0.10),
-          backgroundImage: conversation.avatarUrl != null
-              ? CachedNetworkImageProvider(conversation.avatarUrl!)
-              : null,
-          child: conversation.avatarUrl == null
-              ? Text(
-                  conversation.name.isNotEmpty
-                      ? conversation.name[0].toUpperCase()
-                      : '?',
-                  style: TextStyle(
-                    color: cs.onSurface.withValues(alpha: 0.55),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                )
-              : null,
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              width: 1.5,
+              color: conversation.isOnline
+                  ? AppTheme.textingActiveRedBorder
+                  : Colors.transparent,
+            ),
+          ),
+          child: CircleAvatar(
+            radius: 20,
+            backgroundColor: cs.onSurface.withValues(alpha: 0.10),
+            backgroundImage: conversation.avatarUrl != null
+                ? CachedNetworkImageProvider(conversation.avatarUrl!)
+                : null,
+            child: conversation.avatarUrl == null
+                ? Text(
+                    conversation.name.isNotEmpty
+                        ? conversation.name[0].toUpperCase()
+                        : '?',
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.55),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  )
+                : null,
+          ),
         ),
         if (conversation.isOnline)
           Positioned(
-            right: 1,
-            bottom: 1,
+            right: 2,
+            bottom: 2,
             child: Container(
-              width: 12,
-              height: 12,
+              width: 10,
+              height: 10,
               decoration: BoxDecoration(
                 color: AppTheme.textingOnlineDot,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
+                border: Border.all(color: cs.surface, width: 1.5),
               ),
             ),
           ),
@@ -227,119 +239,59 @@ class _TagChip extends StatelessWidget {
 
   final ConversationTag tag;
 
-  String get label {
-    switch (tag) {
-      case ConversationTag.romantic:
-        return 'Romantic';
-      case ConversationTag.professional:
-        return 'Professional';
-      case ConversationTag.chill:
-        return 'Chill';
-      case ConversationTag.excited:
-        return 'Excited';
-      case ConversationTag.none:
-        return '';
-    }
-  }
-
-  Color get bg {
-    switch (tag) {
-      case ConversationTag.romantic:
-        return AppTheme.textingTagRomanticBg;
-      case ConversationTag.professional:
-        return AppTheme.textingTagProfessionalBg;
-      case ConversationTag.chill:
-        return AppTheme.textingTagChillBg;
-      case ConversationTag.excited:
-        return AppTheme.textingTagExcitedBg;
-      case ConversationTag.none:
-        return Colors.transparent;
-    }
-  }
-
-  Color get fg {
-    switch (tag) {
-      case ConversationTag.romantic:
-        return Colors.white;
-      case ConversationTag.professional:
-        return AppTheme.textingTagProfessionalFg;
-      case ConversationTag.chill:
-        return AppTheme.textingTagChillFg;
-      case ConversationTag.excited:
-        return AppTheme.textingTagExcitedFg;
-      case ConversationTag.none:
-        return Colors.transparent;
-    }
-  }
+  Color get _color => switch (tag) {
+    ConversationTag.romantic => AppTheme.textred,
+    ConversationTag.professional => AppTheme.textingTagProfessionalOutline,
+    ConversationTag.chill => AppTheme.textingTagChillOutline,
+    ConversationTag.excited => AppTheme.textingTagExcitedOutline,
+    ConversationTag.none => Colors.transparent,
+  };
 
   @override
   Widget build(BuildContext context) {
-    if (tag == ConversationTag.none) return const SizedBox.shrink();
+    final label = tag.name[0].toUpperCase() + tag.name.substring(1);
     return Container(
       margin: const EdgeInsets.only(right: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: fg.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(2),
+        border: Border.all(color: _color, width: 0.75),
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: fg),
+        style: TextStyle(
+          fontSize: 8,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.2,
+          color: _color,
+        ),
       ),
     );
   }
 }
-
 
 class _LastMessageSnippet extends StatelessWidget {
   const _LastMessageSnippet({required this.conversation});
 
   final Conversation conversation;
 
+  String get _text {
+    final msg = conversation.lastMessage;
+    if (msg == null) return 'No messages yet';
+    return switch (msg.type) {
+      MessageType.voice => 'Voice message (${msg.formattedDuration})',
+      MessageType.image => 'Sent an image',
+      _ => msg.content,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
-    final msg = conversation.lastMessage;
-    if (msg == null) {
-      return Text(
-        'No messages yet',
-        style: AppTextStyle.bodySecondary,
-        overflow: TextOverflow.ellipsis,
-      );
-    }
-
-    if (msg.type == MessageType.voice) {
-      return Row(
-        children: [
-          const Icon(Icons.mic, size: 16, color: AppColors.textSecondary),
-          const SizedBox(width: 4),
-          Text(
-            'Voice message (${msg.formattedDuration})',
-            style: AppTextStyle.bodySecondary,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      );
-    }
-
-    if (msg.type == MessageType.image) {
-      return Row(
-        children: [
-          const Icon(Icons.image, size: 16, color: AppColors.textSecondary),
-          const SizedBox(width: 4),
-          Text('Photo', style: AppTextStyle.bodySecondary),
-        ],
-      );
-    }
-
     return Text(
-      msg.content,
-      style: AppTextStyle.bodySecondary.copyWith(
-        fontWeight: conversation.unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
-        color: conversation.unreadCount > 0 ? AppColors.textPrimary : AppColors.textSecondary,
-      ),
+      _text,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
+      style: const TextStyle(fontSize: 13, color: AppTheme.iconColor),
     );
   }
 }
