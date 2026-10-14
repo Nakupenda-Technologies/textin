@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:textin/core/errors/failure.dart';
 import 'package:textin/features/texting/models/api/chat_streak.dart';
+import 'package:textin/features/texting/models/chat_customization.dart';
 import 'package:textin/features/texting/models/conversation.dart';
 import 'package:textin/features/texting/models/following_user.dart';
 import 'package:textin/features/texting/models/message.dart';
@@ -134,6 +135,13 @@ class MockTextingRepository implements TextingRepository {
   Future<Either<Failure, void>> toggleSecretInbox(
     String chatId,
     bool inSecretInbox,
+  ) async =>
+      const Right(null);
+
+  @override
+  Future<Either<Failure, void>> updateCustomization(
+    String chatId,
+    ChatCustomization customization,
   ) async =>
       const Right(null);
 

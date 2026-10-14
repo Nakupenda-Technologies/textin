@@ -28,6 +28,10 @@ abstract class TextingRemoteDataSource {
   Future<void> markChatRead(String chatId);
   Future<void> togglePin(String chatId, bool pinned);
   Future<void> toggleSecretInbox(String chatId, bool inSecretInbox);
+  Future<void> updateCustomization(
+    String chatId,
+    Map<String, dynamic> customization,
+  );
   Future<ChatStreak?> fetchStreak(String chatId);
   Future<ChatItem> startOrGetChat({
     required String otherUserId,
@@ -148,6 +152,17 @@ class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
     await client.patch(
       Endpoints.chatSecretInbox(chatId),
       body: {'inSecretInbox': inSecretInbox},
+    );
+  }
+
+  @override
+  Future<void> updateCustomization(
+    String chatId,
+    Map<String, dynamic> customization,
+  ) async {
+    await client.patch(
+      Endpoints.chatCustomization(chatId),
+      body: customization,
     );
   }
 

@@ -32,6 +32,8 @@ class Endpoints {
   static String chatBoundary(String chatId) =>
       '/messaging/chats/$chatId/boundary';
   static String chatStreak(String chatId) => '/messaging/chats/$chatId/streak';
+  static String chatCustomization(String chatId) =>
+      '/messaging/chats/$chatId/customization';
 
   // Users & Contacts
   static String userFollowing(String username) => '/users/$username/following';

@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import '../../../core/errors/failure.dart';
 import '../data_source/texting_remote_data_source.dart';
 import '../models/api/chat_streak.dart';
+import '../models/chat_customization.dart';
 import '../models/conversation.dart';
 import '../models/following_user.dart';
 import '../models/message.dart';
@@ -158,6 +159,24 @@ class TextingRepositoryImpl implements TextingRepository {
   ) async {
     try {
       await remoteDataSource.toggleSecretInbox(chatId, inSecretInbox);
+      return const Right(null);
+    } on Failure catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(UnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updateCustomization(
+    String chatId,
+    ChatCustomization customization,
+  ) async {
+    try {
+      await remoteDataSource.updateCustomization(
+        chatId,
+        customization.toJson(),
+      );
       return const Right(null);
     } on Failure catch (e) {
       return Left(e);

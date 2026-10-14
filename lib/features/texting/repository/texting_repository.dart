@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../../core/errors/failure.dart';
+import '../models/chat_customization.dart';
 import '../models/conversation.dart';
 import '../models/following_user.dart';
 import '../models/message.dart';
@@ -49,6 +50,11 @@ abstract class TextingRepository {
   Future<Either<Failure, void>> toggleSecretInbox(
     String chatId,
     bool inSecretInbox,
+  );
+
+  Future<Either<Failure, void>> updateCustomization(
+    String chatId,
+    ChatCustomization customization,
   );
 
   Future<Either<Failure, ChatStreak?>> fetchStreak(String chatId);
