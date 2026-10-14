@@ -93,77 +93,81 @@ class _MessageBubbleState extends State<MessageBubble> {
         ? palette.sentBorder
         : (isDark ? AppTheme.darkPinkBorder : palette.receivedBorder);
 
-    return GestureDetector(
-      onLongPress: widget.onReply,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        child: Column(
-          crossAxisAlignment: isMe
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start,
-          children: [
-            Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.8,
-              ),
-              decoration: BoxDecoration(
-                color: bubbleBg,
-                borderRadius: bubbleRadius(
-                  widget.customization.bubbleStyle,
-                  isMe: isMe,
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: GestureDetector(
+        onLongPress: widget.onReply,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: isMe
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
+            children: [
+              Container(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.8,
                 ),
-                border: border == null
-                    ? null
-                    : Border.all(width: 0.5, color: border),
+                decoration: BoxDecoration(
+                  color: bubbleBg,
+                  borderRadius: bubbleRadius(
+                    widget.customization.bubbleStyle,
+                    isMe: isMe,
+                  ),
+                  border: border == null
+                      ? null
+                      : Border.all(width: 0.5, color: border),
+                ),
+                padding: widget.message.type == MessageType.voice
+                    ? const EdgeInsets.fromLTRB(8, 8, 16, 8)
+                    : const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                child: Column(
+                  crossAxisAlignment: isMe
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.message.type == MessageType.image &&
+                        widget.message.mediaUrl != null)
+                      _buildImageMessage(widget.message.mediaUrl!),
+                    if (widget.message.type == MessageType.voice)
+                      _buildVoiceMessage(fg, isMe ? bubbleBg : Colors.white),
+                    if (widget.message.type != MessageType.voice &&
+                        widget.message.content.isNotEmpty)
+                      Text(
+                        widget.message.content,
+                        style: TextStyle(
+                          fontSize: 15,
+                          height: 22 / 15,
+                          fontWeight: FontWeight.w600,
+                          color: fg,
+                        ),
+                      ),
+                  ],
+                ),
               ),
-              padding: widget.message.type == MessageType.voice
-                  ? const EdgeInsets.fromLTRB(8, 8, 16, 8)
-                  : const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-              child: Column(
-                crossAxisAlignment: isMe
-                    ? CrossAxisAlignment.end
-                    : CrossAxisAlignment.start,
+              const SizedBox(height: 6),
+              Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (widget.message.type == MessageType.image &&
-                      widget.message.mediaUrl != null)
-                    _buildImageMessage(widget.message.mediaUrl!),
-                  if (widget.message.type == MessageType.voice)
-                    _buildVoiceMessage(fg, isMe ? bubbleBg : Colors.white),
-                  if (widget.message.type != MessageType.voice &&
-                      widget.message.content.isNotEmpty)
-                    Text(
-                      widget.message.content,
-                      style: TextStyle(
-                        fontSize: 15,
-                        height: 22 / 15,
-                        fontWeight: FontWeight.w600,
-                        color: fg,
-                      ),
+                  Text(
+                    widget.message.formattedTime,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.41,
+                      color: AppTheme.textingTimestamp,
                     ),
+                  ),
+                  if (isMe) ...[
+                    const SizedBox(width: 4),
+                    _buildStatusIndicator(),
+                  ],
                 ],
               ),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  widget.message.formattedTime,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.41,
-                    color: AppTheme.textingTimestamp,
-                  ),
-                ),
-                if (isMe) ...[
-                  const SizedBox(width: 4),
-                  _buildStatusIndicator(),
-                ],
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
