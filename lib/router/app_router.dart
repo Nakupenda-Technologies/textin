@@ -10,12 +10,12 @@ import '../features/auth/presentation/pages/pick_currents_screen.dart';
 import '../features/auth/presentation/pages/reset_code_screen.dart';
 import '../features/home/view/home_screen.dart';
 import '../features/launch/presentation/pages/launch_screen.dart';
+import '../features/navigation/presentation/pages/main_navigation_screen.dart';
 import '../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../features/texting/models/conversation.dart';
 import '../features/texting/presentation/pages/secret_box_pin_screen.dart';
 import '../features/texting/presentation/pages/secret_box_screen.dart';
 import '../features/texting/presentation/pages/texting_chat_screen.dart';
-import '../features/texting/presentation/pages/texting_inbox_screen.dart';
 
 class AppRouter {
   static const String launch = '/';
@@ -74,7 +74,7 @@ class AppRouter {
       case newPassword:
         return MaterialPageRoute(builder: (_) => const NewPasswordScreen());
       case inbox:
-        return _fadeRoute(const TextingInboxScreen());
+        return _fadeRoute(const MainNavigationScreen());
       case chat:
         final conversation = settings.arguments as Conversation;
         return MaterialPageRoute(
@@ -87,7 +87,7 @@ class AppRouter {
       case home:
         return MaterialPageRoute(builder: (_) => const HomeScreen());
       default:
-        return MaterialPageRoute(builder: (_) => const TextingInboxScreen());
+        return MaterialPageRoute(builder: (_) => const MainNavigationScreen());
     }
   }
 

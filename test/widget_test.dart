@@ -122,6 +122,13 @@ void main() {
     await _settleFrames(tester);
 
     expect(find.text('TEXTin'), findsOneWidget);
+    expect(find.text('Chats'), findsOneWidget);
+    expect(find.text('Whispers'), findsOneWidget);
+
+    await tester.tap(find.text('Profile'));
+    await _settleFrames(tester);
+
+    expect(find.text('Sign out'), findsOneWidget);
   });
 
   testWidgets('login stays disabled until both fields are filled', (
