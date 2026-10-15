@@ -38,6 +38,9 @@ class Endpoints {
   // Users & Contacts
   static String userFollowing(String username) => '/users/$username/following';
 
+  // Whispers
+  static const String liveWhispers = '/whispers/live';
+
   // Media upload
   static const String mediaUpload = '/media/upload/messaging';
 }
