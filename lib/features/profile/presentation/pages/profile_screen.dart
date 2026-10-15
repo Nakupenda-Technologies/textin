@@ -9,6 +9,7 @@ import '../../../../shared/widgets/app_shimmer.dart';
 import '../../../auth/notifier/session_notifier.dart';
 import '../../../settings/models/user_settings.dart';
 import '../../../settings/notifier/settings_notifier.dart';
+import '../../../settings/presentation/pages/change_email_screen.dart';
 import '../../../settings/presentation/pages/edit_profile_screen.dart';
 import '../../../settings/presentation/widgets/settings_tiles.dart';
 
@@ -131,6 +132,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             icon: PhosphorIconsRegular.userCircleGear,
             title: 'Edit profile',
             onTap: () => _open(const EditProfileScreen()),
+          ),
+          SettingsTile(
+            icon: PhosphorIconsRegular.at,
+            title: 'Change email',
+            onTap: () => _open(const ChangeEmailScreen()),
           ),
         ],
       ),

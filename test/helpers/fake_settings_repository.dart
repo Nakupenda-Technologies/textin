@@ -13,8 +13,16 @@ class FakeSettingsRepository extends SettingsRepository {
   UserSettings stored;
   bool failUpdates;
 
+  final emailChangeRequests = <String>[];
+
   @override
   Future<Either<Failure, UserSettings>> fetchSettings() async => Right(stored);
+
+  @override
+  Future<Either<Failure, Unit>> requestEmailChange(String newEmail) async {
+    emailChangeRequests.add(newEmail);
+    return const Right(unit);
+  }
 
   @override
   Future<Either<Failure, UserSettings>> updateSettings(
