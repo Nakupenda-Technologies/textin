@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
 import '../../../texting/presentation/pages/texting_inbox_screen.dart';
 import '../../../whispers/presentation/pages/whispers_screen.dart';
@@ -43,17 +44,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline_rounded),
-            activeIcon: Icon(Icons.chat_bubble_rounded),
+            icon: Icon(PhosphorIconsRegular.chatCircleDots),
+            activeIcon: Icon(PhosphorIconsFill.chatCircleDots),
             label: 'Chats',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.graphic_eq_rounded),
+            icon: Icon(PhosphorIconsRegular.waveform),
+            activeIcon: Icon(PhosphorIconsFill.waveform),
             label: 'Whispers',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline_rounded),
-            activeIcon: Icon(Icons.person_rounded),
+            icon: Icon(PhosphorIconsRegular.userCircle),
+            activeIcon: Icon(PhosphorIconsFill.userCircle),
             label: 'Profile',
           ),
         ],
