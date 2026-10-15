@@ -57,25 +57,6 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     );
   }
 
-  Future<void> toggleFollow() async {
-    final profile = state.profile;
-    if (profile == null) return;
-    final following = !profile.isFollowing;
-    UserProfile set(UserProfile p, bool value) => p.copyWith(
-      isFollowing: value,
-      followersCount: p.followersCount + (value ? 1 : -1),
-    );
-    await _optimistic(
-      apply: (p) => set(p, following),
-      revert: (p) => set(p, !following),
-      request: () =>
-          repository.setFollowing(profile.username, following: following),
-      errorTitle: following
-          ? "Couldn't follow @${profile.username}"
-          : "Couldn't unfollow @${profile.username}",
-    );
-  }
-
   Future<void> toggleMute() async {
     final profile = state.profile;
     if (profile == null) return;

@@ -4,7 +4,6 @@ import '../models/user_profile.dart';
 
 abstract class UserProfileRemoteDataSource {
   Future<UserProfile> fetchProfile(String userId);
-  Future<void> setFollowing(String username, {required bool following});
   Future<void> setBlocked(String userId, {required bool blocked});
   Future<void> setMuted(String userId, {required bool muted});
 }
@@ -27,12 +26,6 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
       isMuted: (results[2] as Set<String>).contains(userId),
     );
   }
-
-  @override
-  Future<void> setFollowing(String username, {required bool following}) =>
-      following
-      ? client.post(Endpoints.followUser(username))
-      : client.delete(Endpoints.followUser(username));
 
   @override
   Future<void> setBlocked(String userId, {required bool blocked}) =>

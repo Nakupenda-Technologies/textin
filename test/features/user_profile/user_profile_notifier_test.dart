@@ -7,12 +7,7 @@ import 'package:textin/features/user_profile/notifier/user_profile_notifier.dart
 import '../../helpers/recording_toaster.dart';
 import 'fake_user_profile_repository.dart';
 
-const _ada = UserProfile(
-  id: 'u2',
-  username: 'ada',
-  displayName: 'Ada Obi',
-  followersCount: 10,
-);
+const _ada = UserProfile(id: 'u2', username: 'ada', displayName: 'Ada Obi');
 
 void main() {
   late FakeUserProfileRepository repository;
@@ -36,9 +31,6 @@ void main() {
           'username': 'ada',
           'displayName': 'Ada Obi',
           'bio': '  ',
-          'followersCount': 4,
-          'followingCount': 2,
-          'isFollowing': true,
         },
       },
       isBlocked: true,
@@ -51,9 +43,6 @@ void main() {
         id: 'u2',
         username: 'ada',
         displayName: 'Ada Obi',
-        followersCount: 4,
-        followingCount: 2,
-        isFollowing: true,
         isBlocked: true,
       ),
     );
@@ -68,25 +57,15 @@ void main() {
     expect(notifier.state.errorMessage, 'User not found');
   });
 
-  test('following updates the profile and follower count', () async {
-    await notifier.load();
-
-    await notifier.toggleFollow();
-
-    expect(repository.calls, ['follow:ada:true']);
-    expect(notifier.state.profile!.isFollowing, isTrue);
-    expect(notifier.state.profile!.followersCount, 11);
-  });
-
-  test('a failed follow rolls back and shows an error', () async {
+  test('a failed mute rolls back and shows an error', () async {
     await notifier.load();
     repository.actionFailure = const ServerFailure('Offline');
 
-    await notifier.toggleFollow();
+    await notifier.toggleMute();
 
     expect(notifier.state.profile, _ada);
     expect(toaster.errors.single, (
-      title: "Couldn't follow @ada",
+      title: "Couldn't mute @ada",
       message: 'Offline',
     ));
   });

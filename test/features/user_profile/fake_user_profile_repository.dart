@@ -25,15 +25,6 @@ class FakeUserProfileRepository extends UserProfileRepository {
       profileResult;
 
   @override
-  Future<Either<Failure, Unit>> setFollowing(
-    String username, {
-    required bool following,
-  }) async {
-    calls.add('follow:$username:$following');
-    return _actionResult;
-  }
-
-  @override
   Future<Either<Failure, Unit>> setBlocked(
     String userId, {
     required bool blocked,

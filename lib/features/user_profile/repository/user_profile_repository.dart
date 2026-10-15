@@ -11,14 +11,6 @@ class UserProfileRepository {
   Future<Either<Failure, UserProfile>> fetchProfile(String userId) =>
       _guard(() => remote.fetchProfile(userId));
 
-  Future<Either<Failure, Unit>> setFollowing(
-    String username, {
-    required bool following,
-  }) => _guard(() async {
-    await remote.setFollowing(username, following: following);
-    return unit;
-  });
-
   Future<Either<Failure, Unit>> setBlocked(
     String userId, {
     required bool blocked,

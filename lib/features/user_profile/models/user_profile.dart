@@ -8,9 +8,6 @@ class UserProfile extends Equatable {
     this.profilePicture,
     this.bio,
     this.isVerified = false,
-    this.followersCount = 0,
-    this.followingCount = 0,
-    this.isFollowing = false,
     this.isBlocked = false,
     this.isMuted = false,
   });
@@ -31,9 +28,6 @@ class UserProfile extends Equatable {
       profilePicture: json['profilePicture'] as String?,
       bio: bio == null || bio.isEmpty ? null : bio,
       isVerified: json['isVerified'] as bool? ?? false,
-      followersCount: (json['followersCount'] as num?)?.toInt() ?? 0,
-      followingCount: (json['followingCount'] as num?)?.toInt() ?? 0,
-      isFollowing: json['isFollowing'] as bool? ?? false,
       isBlocked: isBlocked,
       isMuted: isMuted,
     );
@@ -45,27 +39,16 @@ class UserProfile extends Equatable {
   final String? profilePicture;
   final String? bio;
   final bool isVerified;
-  final int followersCount;
-  final int followingCount;
-  final bool isFollowing;
   final bool isBlocked;
   final bool isMuted;
 
-  UserProfile copyWith({
-    int? followersCount,
-    bool? isFollowing,
-    bool? isBlocked,
-    bool? isMuted,
-  }) => UserProfile(
+  UserProfile copyWith({bool? isBlocked, bool? isMuted}) => UserProfile(
     id: id,
     username: username,
     displayName: displayName,
     profilePicture: profilePicture,
     bio: bio,
     isVerified: isVerified,
-    followersCount: followersCount ?? this.followersCount,
-    followingCount: followingCount,
-    isFollowing: isFollowing ?? this.isFollowing,
     isBlocked: isBlocked ?? this.isBlocked,
     isMuted: isMuted ?? this.isMuted,
   );
@@ -78,9 +61,6 @@ class UserProfile extends Equatable {
     profilePicture,
     bio,
     isVerified,
-    followersCount,
-    followingCount,
-    isFollowing,
     isBlocked,
     isMuted,
   ];

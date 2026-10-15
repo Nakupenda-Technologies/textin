@@ -21,8 +21,6 @@ void main() {
           username: 'ada',
           displayName: 'Ada Obi',
           bio: 'Building things',
-          followersCount: 10,
-          followingCount: 3,
         ),
       ),
     );
@@ -48,25 +46,19 @@ void main() {
     expect(find.text('Ada Obi'), findsOneWidget);
     expect(find.text('@ada'), findsOneWidget);
     expect(find.text('Building things'), findsOneWidget);
-    expect(find.text('10'), findsOneWidget);
-    expect(find.text('Follow @ada'), findsOneWidget);
+    expect(find.textContaining('Follow'), findsNothing);
     expect(find.text('Mute @ada'), findsOneWidget);
     expect(find.text('Block @ada'), findsOneWidget);
   });
 
-  testWidgets('following and muting update the actions straight away', (
-    tester,
-  ) async {
+  testWidgets('muting updates the action straight away', (tester) async {
     await pumpScreen(tester);
 
-    await tester.tap(find.text('Follow @ada'));
     await tester.tap(find.text('Mute @ada'));
     await tester.pump();
 
-    expect(repository.calls, ['follow:ada:true', 'mute:u2:true']);
-    expect(find.text('Unfollow @ada'), findsOneWidget);
+    expect(repository.calls, ['mute:u2:true']);
     expect(find.text('Unmute @ada'), findsOneWidget);
-    expect(find.text('11'), findsOneWidget);
   });
 
   testWidgets('blocking asks for confirmation first', (tester) async {

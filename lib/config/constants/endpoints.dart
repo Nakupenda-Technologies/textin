@@ -37,7 +37,6 @@ class Endpoints {
 
   // Users & Contacts
   static String userFollowing(String username) => '/users/$username/following';
-  static String followUser(String username) => '/users/$username/follow';
 
   // Settings
   static const String settings = '/settings/me';

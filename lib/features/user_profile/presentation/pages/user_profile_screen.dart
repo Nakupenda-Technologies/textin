@@ -42,11 +42,9 @@ class UserProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             if (profile != null) ...[
-              _Details(profile: profile),
-              const SizedBox(height: 24),
+              if (profile.bio case final bio?) _Bio(bio),
               _Actions(
                 profile: profile,
-                onFollow: notifier.toggleFollow,
                 onMute: notifier.toggleMute,
                 onBlock: () async {
                   if (profile.isBlocked ||
@@ -197,46 +195,26 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _Details extends StatelessWidget {
-  const _Details({required this.profile});
+class _Bio extends StatelessWidget {
+  const _Bio(this.bio);
 
-  final UserProfile profile;
+  final String bio;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final countStyle = TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w600,
-      color: cs.onSurface,
-    );
-    final bio = profile.bio;
-
-    return Column(
-      children: [
-        if (bio != null) ...[
-          Text(
-            bio,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              height: 1.4,
-              color: cs.onSurface.withValues(alpha: 0.75),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('${profile.followersCount}', style: countStyle),
-            Text(' Followers', style: AppTextStyle.bodySecondary),
-            const SizedBox(width: 20),
-            Text('${profile.followingCount}', style: countStyle),
-            Text(' Following', style: AppTextStyle.bodySecondary),
-          ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Text(
+        bio,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 13,
+          height: 1.4,
+          color: Theme.of(
+            context,
+          ).colorScheme.onSurface.withValues(alpha: 0.75),
         ),
-      ],
+      ),
     );
   }
 }
@@ -244,13 +222,11 @@ class _Details extends StatelessWidget {
 class _Actions extends StatelessWidget {
   const _Actions({
     required this.profile,
-    required this.onFollow,
     required this.onMute,
     required this.onBlock,
   });
 
   final UserProfile profile;
-  final VoidCallback onFollow;
   final VoidCallback onMute;
   final VoidCallback onBlock;
 
@@ -260,13 +236,6 @@ class _Actions extends StatelessWidget {
 
     return Column(
       children: [
-        _ActionRow(
-          icon: profile.isFollowing
-              ? PhosphorIconsRegular.userMinus
-              : PhosphorIconsRegular.userPlus,
-          label: profile.isFollowing ? 'Unfollow $handle' : 'Follow $handle',
-          onTap: onFollow,
-        ),
         _ActionRow(
           icon: profile.isMuted
               ? PhosphorIconsRegular.speakerHigh
@@ -352,11 +321,9 @@ class _DetailsShimmer extends StatelessWidget {
     return AppShimmer(
       child: Column(
         children: [
-          const ShimmerBlock(width: 120, height: 14),
-          const SizedBox(height: 16),
-          const ShimmerBlock(width: 180, height: 14),
-          const SizedBox(height: 32),
-          for (var i = 0; i < 3; i++) ...[
+          const ShimmerBlock(width: 200, height: 14),
+          const SizedBox(height: 24),
+          for (var i = 0; i < 2; i++) ...[
             const ShimmerBlock(height: 50, radius: 12),
             const SizedBox(height: 8),
           ],
