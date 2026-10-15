@@ -1,143 +1,290 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
 
-class SettingsSection extends StatelessWidget {
-  const SettingsSection({
+class SettingsHeading extends StatelessWidget {
+  const SettingsHeading(
+    this.text, {
+    super.key,
+    this.accent = true,
+    this.large = true,
+  });
+
+  final String text;
+  final bool accent;
+  final bool large;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(top: large ? 20 : 14, bottom: 6),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: large ? 20 : 16,
+          fontWeight: large ? FontWeight.w600 : FontWeight.w500,
+          color: accent
+              ? AppTheme.textred
+              : Theme.of(context).colorScheme.onSurface,
+        ),
+      ),
+    );
+  }
+}
+
+class SettingsRow extends StatelessWidget {
+  const SettingsRow({
     super.key,
     required this.title,
-    required this.children,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
   });
 
   final String title;
-  final List<Widget> children;
+  final String? subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle!,
+                      style: TextStyle(
+                        fontSize: 11,
+                        height: 1.3,
+                        color: cs.onSurface.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (trailing != null) ...[const SizedBox(width: 16), trailing!],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class SettingsPillButton extends StatelessWidget {
+  const SettingsPillButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.destructive = false,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final bool destructive;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(74, 32),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        backgroundColor: isDark ? AppTheme.darkSurface : AppTheme.surface,
+        foregroundColor: destructive ? AppTheme.textred : cs.onSurface,
+        side: BorderSide(
+          color: destructive
+              ? AppTheme.pinkborder
+              : (isDark ? AppTheme.darkBorder : AppTheme.btnborder),
+        ),
+        shape: const StadiumBorder(),
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      ),
+      child: Text(label),
+    );
+  }
+}
+
+class SettingsValueLink extends StatelessWidget {
+  const SettingsValueLink({super.key, this.value});
+
+  final String? value;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = Theme.of(
+      context,
+    ).colorScheme.onSurface.withValues(alpha: 0.6);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 24, 4, 8),
-          child: Text(
-            title.toUpperCase(),
-            style: AppTextStyle.bodySecondary.copyWith(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.6,
-            ),
-          ),
-        ),
-        Container(
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: isDark ? AppTheme.darkSurface : AppTheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? AppTheme.darkBorder : AppTheme.border,
-            ),
-          ),
-          child: Column(
-            children: [
-              for (var i = 0; i < children.length; i++) ...[
-                if (i > 0) const Divider(height: 1, indent: 52),
-                children[i],
-              ],
-            ],
-          ),
-        ),
+        if (value != null)
+          Text(value!, style: TextStyle(fontSize: 12, color: muted)),
+        const SizedBox(width: 6),
+        Icon(PhosphorIconsRegular.caretRight, size: 14, color: muted),
       ],
     );
   }
 }
 
-class SettingsTile extends StatelessWidget {
-  const SettingsTile({
+class SettingsSwitch extends StatelessWidget {
+  const SettingsSwitch({
     super.key,
-    required this.icon,
-    required this.title,
-    this.value,
-    this.onTap,
-    this.destructive = false,
-  });
-
-  final IconData icon;
-  final String title;
-  final String? value;
-  final VoidCallback? onTap;
-  final bool destructive;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final color = destructive ? cs.error : cs.onSurface;
-
-    return ListTile(
-      onTap: onTap,
-      leading: Icon(icon, size: 22, color: color),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-          color: color,
-        ),
-      ),
-      trailing: destructive
-          ? null
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (value != null)
-                  Text(
-                    value!,
-                    style: AppTextStyle.bodySecondary.copyWith(fontSize: 14),
-                  ),
-                const SizedBox(width: 4),
-                Icon(
-                  PhosphorIconsRegular.caretRight,
-                  size: 16,
-                  color: cs.onSurface.withValues(alpha: 0.4),
-                ),
-              ],
-            ),
-    );
-  }
-}
-
-class SettingsSwitchTile extends StatelessWidget {
-  const SettingsSwitchTile({
-    super.key,
-    required this.icon,
-    required this.title,
     required this.value,
     required this.onChanged,
   });
 
-  final IconData icon;
-  final String title;
   final bool value;
   final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
+    return SizedBox(
+      width: 42,
+      height: 24,
+      child: FittedBox(
+        child: Switch(
+          value: value,
+          onChanged: onChanged,
+          activeTrackColor: AppTheme.textred,
+          inactiveTrackColor: AppTheme.switchtheme,
+          thumbColor: const WidgetStatePropertyAll(Colors.white),
+          trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      ),
+    );
+  }
+}
+
+class SettingsDropdownPill<T> extends StatelessWidget {
+  const SettingsDropdownPill({
+    super.key,
+    required this.options,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final Map<T, String> options;
+  final T selected;
+  final ValueChanged<T> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final cs = Theme.of(context).colorScheme;
 
-    return SwitchListTile.adaptive(
-      value: value,
-      onChanged: onChanged,
-      activeTrackColor: AppTheme.textred,
-      secondary: Icon(icon, size: 22, color: cs.onSurface),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-          color: cs.onSurface,
+    return PopupMenuButton<T>(
+      initialValue: selected,
+      onSelected: onSelected,
+      position: PopupMenuPosition.under,
+      itemBuilder: (_) => [
+        for (final MapEntry(key: value, value: label) in options.entries)
+          PopupMenuItem(value: value, child: Text(label)),
+      ],
+      child: Container(
+        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.darkSurface : AppTheme.surface,
+          borderRadius: BorderRadius.circular(16),
         ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              options[selected] ?? '',
+              style: TextStyle(fontSize: 12, color: cs.onSurface),
+            ),
+            const SizedBox(width: 6),
+            Icon(PhosphorIconsBold.caretDown, size: 12, color: cs.onSurface),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class SettingsSegmented<T> extends StatelessWidget {
+  const SettingsSegmented({
+    super.key,
+    required this.options,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final Map<T, String> options;
+  final T selected;
+  final ValueChanged<T> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.darkSurface2 : AppTheme.grayBg,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final MapEntry(key: value, value: label) in options.entries)
+            GestureDetector(
+              onTap: () => onSelected(value),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: value == selected
+                      ? (isDark ? AppTheme.darkSurface : AppTheme.surface)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: value == selected
+                        ? FontWeight.w600
+                        : FontWeight.w400,
+                    color: value == selected
+                        ? cs.onSurface
+                        : cs.onSurface.withValues(alpha: 0.55),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

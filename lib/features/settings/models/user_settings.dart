@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 enum MessagePermission {
   everyone('everyone', 'Everyone'),
-  following('following', 'People I follow');
+  following('following', 'Following');
 
   const MessagePermission(this.value, this.label);
 
@@ -34,7 +34,7 @@ enum AppThemePreference {
 }
 
 const supportedLanguages = {
-  'en-US': 'English',
+  'en-US': 'English (US)',
   'fr-FR': 'Français',
   'sw-KE': 'Kiswahili',
 };
