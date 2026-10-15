@@ -47,12 +47,9 @@ class InboxNotifier extends StateNotifier<InboxState> {
   final String myUserId;
 
   void _initSocket() {
-    socketService.connect(
-      onConnect: () {
-        socketService.onNewMessage(_handleSocketMessage);
-        socketService.onTyping(_handleSocketTyping);
-      },
-    );
+    socketService.onNewMessage(_handleSocketMessage);
+    socketService.onTyping(_handleSocketTyping);
+    socketService.connect();
   }
 
   void _handleSocketMessage(Map<String, dynamic> data) {
@@ -72,7 +69,7 @@ class InboxNotifier extends StateNotifier<InboxState> {
     state = state.copyWith(conversations: updatedList);
   }
 
-  void _handleSocketTyping(String userId, bool isTyping) {
+  void _handleSocketTyping(String chatId, String userId, bool isTyping) {
     final updatedTyping = Set<String>.from(state.typingUserIds);
     if (isTyping) {
       updatedTyping.add(userId);

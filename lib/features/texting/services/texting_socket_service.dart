@@ -11,10 +11,9 @@ class TextingSocketService {
 
   static String? _noToken() => null;
 
-  void connect({required void Function() onConnect}) {
+  void connect() {
     final token = _accessToken() ?? '';
     final url = '${Env.websocketBaseUrl}/messaging';
-    _ws.setOnConnectCallback(onConnect);
     _ws.connect(
       url,
       authToken: token.isEmpty ? null : token,
@@ -34,18 +33,23 @@ class TextingSocketService {
     _ws.emit('leave_chat', {'chatId': chatId});
   }
 
-  void onNewMessage(void Function(Map<String, dynamic> data) callback) {
-    _ws.onEvent('message', (data) {
+  void Function() onNewMessage(
+    void Function(Map<String, dynamic> data) callback,
+  ) {
+    return _ws.onEvent('message', (data) {
       if (data is Map<String, dynamic>) callback(ChatMessageApi.unwrap(data));
     });
   }
 
-  void onTyping(void Function(String userId, bool isTyping) callback) {
-    _ws.onEvent('typing', (data) {
+  void Function() onTyping(
+    void Function(String chatId, String userId, bool isTyping) callback,
+  ) {
+    return _ws.onEvent('typing', (data) {
       if (data is! Map<String, dynamic>) return;
+      final chatId = data['chatId'] as String?;
       final userId = data['userId'] as String?;
       final isTyping = data['isTyping'] as bool? ?? false;
-      if (userId != null) callback(userId, isTyping);
+      if (chatId != null && userId != null) callback(chatId, userId, isTyping);
     });
   }
 

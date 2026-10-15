@@ -4,7 +4,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 class WebSocketService {
   io.Socket? _socket;
   bool _isConnected = false;
-  final Map<String, Function(dynamic)> _eventHandlers = {};
+  final Map<String, Set<Function(dynamic)>> _eventHandlers = {};
   Function()? _onConnectCallback;
 
   bool get isConnected => _isConnected;
@@ -54,6 +54,11 @@ class WebSocketService {
 
     log('[WS] Connecting to $baseUrl (reconnect=$reconnect)');
     _socket = io.io(baseUrl, options.build());
+    _eventHandlers.forEach((event, handlers) {
+      for (final handler in handlers) {
+        _socket!.on(event, handler);
+      }
+    });
     _setupSocketListeners();
     _socket!.connect();
   }
@@ -62,12 +67,6 @@ class WebSocketService {
     _socket!.onConnect((_) {
       _isConnected = true;
       log('[WS] Connected');
-
-      _eventHandlers.forEach((event, handler) {
-        _socket!.off(event);
-        _socket!.on(event, handler);
-      });
-
       _onConnectCallback?.call();
     });
 
@@ -89,13 +88,13 @@ class WebSocketService {
     });
   }
 
-  void onEvent(String event, Function(dynamic) handler) {
-    _socket?.off(event);
-    _eventHandlers[event] = handler;
-    if (_socket != null && _isConnected) {
-      _socket!.on(event, handler);
-      log('[WS] Listener registered for: $event');
-    }
+  void Function() onEvent(String event, Function(dynamic) handler) {
+    _eventHandlers.putIfAbsent(event, () => {}).add(handler);
+    _socket?.on(event, handler);
+    return () {
+      _eventHandlers[event]?.remove(handler);
+      _socket?.off(event, handler);
+    };
   }
 
   void emit(String event, dynamic data) {

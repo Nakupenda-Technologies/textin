@@ -77,6 +77,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   final String myUserId;
   final TextingRepository repository;
   final TextingSocketService socketService;
+  List<void Function()> _socketSubscriptions = const [];
 
   void _init() {
     final draft = MessageDraftService.getDraft(chatId) ?? '';
@@ -85,8 +86,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
 
     socketService.joinChat(chatId);
-    socketService.onNewMessage(_handleIncomingMessage);
-    socketService.onTyping(_handleTyping);
+    _socketSubscriptions = [
+      socketService.onNewMessage(_handleIncomingMessage),
+      socketService.onTyping(_handleTyping),
+    ];
   }
 
   void _handleIncomingMessage(Map<String, dynamic> data) {
@@ -110,8 +113,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.copyWith(messages: [...state.messages, msg]);
   }
 
-  void _handleTyping(String userId, bool isTyping) {
-    if (userId == otherUserId) {
+  void _handleTyping(String typingChatId, String userId, bool isTyping) {
+    if (typingChatId == chatId && userId == otherUserId) {
       state = state.copyWith(isOtherUserTyping: isTyping);
     }
   }
@@ -299,6 +302,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   @override
   void dispose() {
+    for (final cancel in _socketSubscriptions) {
+      cancel();
+    }
     socketService.leaveChat(chatId);
     super.dispose();
   }
