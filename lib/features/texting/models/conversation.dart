@@ -9,6 +9,7 @@ class Conversation extends Equatable {
   const Conversation({
     required this.id,
     required this.name,
+    this.otherUserId,
     this.avatarUrl,
     this.lastSeen,
     this.updatedAt,
@@ -28,6 +29,7 @@ class Conversation extends Equatable {
     return Conversation(
       id: item.id,
       name: item.otherUser.displayName,
+      otherUserId: item.otherUser.id.isEmpty ? null : item.otherUser.id,
       avatarUrl: item.otherUser.profilePictureUrl,
       lastSeen: item.otherUser.lastSeen,
       updatedAt: item.updatedAt,
@@ -43,6 +45,7 @@ class Conversation extends Equatable {
 
   final String id;
   final String name;
+  final String? otherUserId;
   final String? avatarUrl;
   final DateTime? lastSeen;
   final DateTime? updatedAt;
@@ -72,6 +75,7 @@ class Conversation extends Equatable {
   Conversation copyWith({
     String? id,
     String? name,
+    String? otherUserId,
     String? avatarUrl,
     DateTime? lastSeen,
     DateTime? updatedAt,
@@ -86,6 +90,7 @@ class Conversation extends Equatable {
     return Conversation(
       id: id ?? this.id,
       name: name ?? this.name,
+      otherUserId: otherUserId ?? this.otherUserId,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       lastSeen: lastSeen ?? this.lastSeen,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -103,6 +108,7 @@ class Conversation extends Equatable {
   List<Object?> get props => [
     id,
     name,
+    otherUserId,
     avatarUrl,
     lastSeen,
     updatedAt,
