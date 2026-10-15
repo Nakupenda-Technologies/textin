@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/widgets/app_shimmer.dart';
 import '../../notifier/registration_notifier.dart';
 
 class UsernameStatusIcon extends StatelessWidget {
@@ -12,9 +13,8 @@ class UsernameStatusIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final Widget icon = switch (status) {
       UsernameStatus.idle => const SizedBox.shrink(),
-      UsernameStatus.checking => const SizedBox.square(
-        dimension: 16,
-        child: CircularProgressIndicator(strokeWidth: 2),
+      UsernameStatus.checking => const AppShimmer(
+        child: ShimmerBlock.circle(size: 16),
       ),
       UsernameStatus.available => const Icon(
         Icons.check_circle_rounded,

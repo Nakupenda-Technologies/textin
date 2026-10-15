@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../router/app_router.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/widgets/app_shimmer.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../models/current_item.dart';
 import '../../notifier/registration_notifier.dart';
@@ -205,24 +206,25 @@ class _PickerField extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: onSurface.withValues(alpha: 0.45),
-                  ),
-                ),
+                child: isLoading
+                    ? const AppShimmer(
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: ShimmerBlock(width: 140, height: 16),
+                        ),
+                      )
+                    : Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: onSurface.withValues(alpha: 0.45),
+                        ),
+                      ),
               ),
-              if (isLoading)
-                const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: onSurface.withValues(alpha: 0.6),
-                ),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: onSurface.withValues(alpha: 0.6),
+              ),
             ],
           ),
         ),
