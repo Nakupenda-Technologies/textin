@@ -23,6 +23,7 @@ class AppTextField extends StatelessWidget {
     this.onTap,
     this.onChanged,
     this.onSubmitted,
+    this.maxLines = 1,
   });
 
   final String label;
@@ -42,8 +43,8 @@ class AppTextField extends StatelessWidget {
   final VoidCallback? onTap;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
+  final int maxLines;
 
-  static const _radius = BorderRadius.all(Radius.circular(35));
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +56,7 @@ class AppTextField extends StatelessWidget {
 
     OutlineInputBorder border(Color color, [double width = 1]) =>
         OutlineInputBorder(
-          borderRadius: _radius,
+          borderRadius: BorderRadius.circular(maxLines > 1 ? 20 : 35),
           borderSide: BorderSide(color: color, width: width),
         );
 
@@ -74,6 +75,8 @@ class AppTextField extends StatelessWidget {
         TextField(
           controller: controller,
           obscureText: obscureText,
+          maxLines: maxLines,
+          minLines: maxLines > 1 ? 3 : null,
           keyboardType: keyboardType,
           textInputAction: textInputAction,
           textCapitalization: textCapitalization,
