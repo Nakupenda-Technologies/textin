@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/chat_customization.dart';
@@ -78,6 +80,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
   final TextingRepository repository;
   final TextingSocketService socketService;
   List<void Function()> _socketSubscriptions = const [];
+  Timer? _stopTypingTimer;
+  Timer? _otherTypingExpiry;
+  DateTime? _typingSentAt;
+
+  static const _typingIdle = Duration(seconds: 4);
+  static const _typingRefresh = Duration(seconds: 3);
+  static const _otherTypingTimeout = Duration(seconds: 6);
 
   void _init() {
     final draft = MessageDraftService.getDraft(chatId) ?? '';
@@ -110,13 +119,24 @@ class ChatNotifier extends StateNotifier<ChatState> {
       return;
     }
 
-    state = state.copyWith(messages: [...state.messages, msg]);
+    if (!msg.isMe) _otherTypingExpiry?.cancel();
+    state = state.copyWith(
+      messages: [...state.messages, msg],
+      isOtherUserTyping: msg.isMe ? null : false,
+    );
   }
 
   void _handleTyping(String typingChatId, String userId, bool isTyping) {
-    if (typingChatId == chatId && userId == otherUserId) {
-      state = state.copyWith(isOtherUserTyping: isTyping);
+    if (typingChatId != chatId || userId != otherUserId) return;
+
+    _otherTypingExpiry?.cancel();
+    if (isTyping) {
+      _otherTypingExpiry = Timer(
+        _otherTypingTimeout,
+        () => state = state.copyWith(isOtherUserTyping: false),
+      );
     }
+    state = state.copyWith(isOtherUserTyping: isTyping);
   }
 
   Future<void> loadMessages() async {
@@ -157,6 +177,17 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 
   void emitTyping(bool isTyping) {
+    _stopTypingTimer?.cancel();
+    if (isTyping) {
+      _stopTypingTimer = Timer(_typingIdle, () => emitTyping(false));
+      final now = DateTime.now();
+      final sentAt = _typingSentAt;
+      if (sentAt != null && now.difference(sentAt) < _typingRefresh) return;
+      _typingSentAt = now;
+    } else {
+      if (_typingSentAt == null) return;
+      _typingSentAt = null;
+    }
     socketService.sendTyping(chatId, isTyping: isTyping);
   }
 
@@ -305,6 +336,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
     for (final cancel in _socketSubscriptions) {
       cancel();
     }
+    emitTyping(false);
+    _stopTypingTimer?.cancel();
+    _otherTypingExpiry?.cancel();
     socketService.leaveChat(chatId);
     super.dispose();
   }

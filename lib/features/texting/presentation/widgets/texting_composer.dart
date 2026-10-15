@@ -383,8 +383,8 @@ class _TextingComposerState extends State<TextingComposer> {
                 final composing = text.trim().isNotEmpty;
                 if (composing != _isComposing) {
                   setState(() => _isComposing = composing);
-                  widget.onTyping(composing);
                 }
+                widget.onTyping(composing);
               },
               decoration: InputDecoration(
                 hintText: 'Type something lovely...',

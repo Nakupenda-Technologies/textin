@@ -80,6 +80,33 @@ class _ImageUploadingRepository extends MockTextingRepository {
   }
 }
 
+class _FakeSocketService extends TextingSocketService {
+  _FakeSocketService() : super(WebSocketService());
+
+  final sentTyping = <bool>[];
+  void Function(String chatId, String userId, bool isTyping)? typing;
+
+  @override
+  void Function() onTyping(
+    void Function(String chatId, String userId, bool isTyping) callback,
+  ) {
+    typing = callback;
+    return () => typing = null;
+  }
+
+  @override
+  void sendTyping(String chatId, {required bool isTyping}) =>
+      sentTyping.add(isTyping);
+}
+
+ChatNotifier _typingNotifier(_FakeSocketService socket) => ChatNotifier(
+  chatId: 'chat_1',
+  otherUserId: 'other',
+  myUserId: 'me',
+  repository: MockTextingRepository(),
+  socketService: socket,
+);
+
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -155,5 +182,37 @@ void main() {
     expect(sent.mediaUrl, 'https://cdn.test/photo.jpg');
     expect(sent.localMediaPath, '/tmp/photo.jpg');
     expect(sent.status, MessageStatus.sent);
+  });
+
+  testWidgets('typing is sent once and stops after a pause', (tester) async {
+    final socket = _FakeSocketService();
+    final notifier = _typingNotifier(socket);
+
+    notifier.emitTyping(true);
+    notifier.emitTyping(true);
+    notifier.emitTyping(true);
+    expect(socket.sentTyping, [true]);
+
+    await tester.pump(const Duration(seconds: 4));
+    expect(socket.sentTyping, [true, false]);
+
+    notifier.dispose();
+  });
+
+  testWidgets('the other user typing expires without updates', (tester) async {
+    final socket = _FakeSocketService();
+    final notifier = _typingNotifier(socket);
+
+    socket.typing!('another_chat', 'other', true);
+    expect(notifier.state.isOtherUserTyping, isFalse);
+
+    socket.typing!('chat_1', 'other', true);
+    expect(notifier.state.isOtherUserTyping, isTrue);
+
+    await tester.pump(const Duration(seconds: 6));
+    expect(notifier.state.isOtherUserTyping, isFalse);
+
+    notifier.dispose();
+    expect(socket.typing, isNull);
   });
 }
