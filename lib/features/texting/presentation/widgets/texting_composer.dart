@@ -47,6 +47,7 @@ class TextingComposer extends StatefulWidget {
 
 class _TextingComposerState extends State<TextingComposer> {
   late final TextEditingController _controller;
+  final FocusNode _focusNode = FocusNode();
   bool _isComposing = false;
   final ImagePicker _picker = ImagePicker();
   final AudioRecorder _recorder = AudioRecorder();
@@ -66,7 +67,17 @@ class _TextingComposerState extends State<TextingComposer> {
   }
 
   @override
+  void didUpdateWidget(TextingComposer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final replyingTo = widget.replyingTo;
+    if (replyingTo != null && replyingTo.id != oldWidget.replyingTo?.id) {
+      _focusNode.requestFocus();
+    }
+  }
+
+  @override
   void dispose() {
+    _focusNode.dispose();
     _recordingTicker?.cancel();
     _recorder.dispose();
     _previewPlayer?.dispose();
@@ -370,6 +381,7 @@ class _TextingComposerState extends State<TextingComposer> {
           Expanded(
             child: TextField(
               controller: _controller,
+              focusNode: _focusNode,
               maxLines: 4,
               minLines: 1,
               textCapitalization: TextCapitalization.sentences,
