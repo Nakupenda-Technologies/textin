@@ -16,7 +16,9 @@ void main() {
 
   Future<void> pumpBubble(WidgetTester tester, Message message) =>
       tester.pumpWidget(
-        MaterialApp(home: Scaffold(body: MessageBubble(message: message))),
+        MaterialApp(
+          home: Scaffold(body: MessageBubble(message: message)),
+        ),
       );
 
   testWidgets('sent text shows its time and delivery tick', (tester) async {
@@ -57,5 +59,28 @@ void main() {
 
     await tester.longPress(find.text('The vibe feels so organic right now'));
     expect(replied, isTrue);
+  });
+
+  testWidgets('swiping a bubble right replies to it', (tester) async {
+    var replies = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: MessageBubble(
+            message: message(isMe: false),
+            onReply: () => replies++,
+          ),
+        ),
+      ),
+    );
+    final bubble = find.text('The vibe feels so organic right now');
+
+    await tester.drag(bubble, const Offset(20, 0));
+    await tester.pumpAndSettle();
+    expect(replies, 0);
+
+    await tester.drag(bubble, const Offset(120, 0));
+    await tester.pumpAndSettle();
+    expect(replies, 1);
   });
 }

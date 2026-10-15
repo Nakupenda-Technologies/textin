@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/app_shimmer.dart';
@@ -30,6 +31,23 @@ class _MessageBubbleState extends State<MessageBubble> {
   AudioPlayer? _player;
   bool _isPlaying = false;
   Duration _position = Duration.zero;
+  double _swipeOffset = 0;
+
+  static const _swipeThreshold = 56.0;
+  static const _maxSwipe = 72.0;
+
+  void _onSwipeUpdate(DragUpdateDetails details) {
+    final next = (_swipeOffset + details.delta.dx).clamp(0.0, _maxSwipe);
+    if (_swipeOffset < _swipeThreshold && next >= _swipeThreshold) {
+      HapticFeedback.lightImpact();
+    }
+    setState(() => _swipeOffset = next);
+  }
+
+  void _onSwipeEnd(DragEndDetails _) {
+    if (_swipeOffset >= _swipeThreshold) widget.onReply?.call();
+    setState(() => _swipeOffset = 0);
+  }
 
   @override
   void dispose() {
@@ -100,81 +118,119 @@ class _MessageBubbleState extends State<MessageBubble> {
         ? palette.sentBorder
         : (isDark ? AppTheme.darkPinkBorder : palette.receivedBorder);
 
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: GestureDetector(
-        onLongPress: widget.onReply,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: isMe
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
-            children: [
-              Container(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.8,
+    final canReply = widget.onReply != null;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPress: widget.onReply,
+      onHorizontalDragUpdate: canReply ? _onSwipeUpdate : null,
+      onHorizontalDragEnd: canReply ? _onSwipeEnd : null,
+      child: Stack(
+        children: [
+          Positioned(
+            left: 16,
+            top: 0,
+            bottom: 0,
+            child: Opacity(
+              opacity: (_swipeOffset / _swipeThreshold).clamp(0.0, 1.0),
+              child: const Icon(
+                Icons.reply_rounded,
+                size: 22,
+                color: AppTheme.textingTimestamp,
+              ),
+            ),
+          ),
+          AnimatedContainer(
+            duration: _swipeOffset == 0
+                ? const Duration(milliseconds: 180)
+                : Duration.zero,
+            curve: Curves.easeOut,
+            transform: Matrix4.translationValues(_swipeOffset, 0, 0),
+            child: Align(
+              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 6,
                 ),
-                decoration: BoxDecoration(
-                  color: bubbleBg,
-                  borderRadius: bubbleRadius(
-                    widget.customization.bubbleStyle,
-                    isMe: isMe,
-                  ),
-                  border: border == null
-                      ? null
-                      : Border.all(width: 0.5, color: border),
-                ),
-                padding: widget.message.type == MessageType.voice
-                    ? const EdgeInsets.fromLTRB(8, 8, 16, 8)
-                    : const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: isMe
                       ? CrossAxisAlignment.end
                       : CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (widget.message.type == MessageType.image)
-                      _buildImageMessage(),
-                    if (widget.message.type == MessageType.voice)
-                      _buildVoiceMessage(fg, isMe ? bubbleBg : Colors.white),
-                    if (widget.message.type != MessageType.voice &&
-                        widget.message.content.isNotEmpty)
-                      Text(
-                        widget.message.content,
-                        style: TextStyle(
-                          fontSize: 15,
-                          height: 22 / 15,
-                          fontWeight: FontWeight.w600,
-                          color: fg,
-                        ),
+                    Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.8,
                       ),
+                      decoration: BoxDecoration(
+                        color: bubbleBg,
+                        borderRadius: bubbleRadius(
+                          widget.customization.bubbleStyle,
+                          isMe: isMe,
+                        ),
+                        border: border == null
+                            ? null
+                            : Border.all(width: 0.5, color: border),
+                      ),
+                      padding: widget.message.type == MessageType.voice
+                          ? const EdgeInsets.fromLTRB(8, 8, 16, 8)
+                          : const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 7,
+                            ),
+                      child: Column(
+                        crossAxisAlignment: isMe
+                            ? CrossAxisAlignment.end
+                            : CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (widget.message.type == MessageType.image)
+                            _buildImageMessage(),
+                          if (widget.message.type == MessageType.voice)
+                            _buildVoiceMessage(
+                              fg,
+                              isMe ? bubbleBg : Colors.white,
+                            ),
+                          if (widget.message.type != MessageType.voice &&
+                              widget.message.content.isNotEmpty)
+                            Text(
+                              widget.message.content,
+                              style: TextStyle(
+                                fontSize: 15,
+                                height: 22 / 15,
+                                fontWeight: FontWeight.w600,
+                                color: fg,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.message.formattedTime,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.41,
+                            color: AppTheme.textingTimestamp,
+                          ),
+                        ),
+                        if (isMe) ...[
+                          const SizedBox(width: 4),
+                          _buildStatusIndicator(),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.message.formattedTime,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.41,
-                      color: AppTheme.textingTimestamp,
-                    ),
-                  ),
-                  if (isMe) ...[
-                    const SizedBox(width: 4),
-                    _buildStatusIndicator(),
-                  ],
-                ],
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
