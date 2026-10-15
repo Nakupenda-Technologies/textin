@@ -1,18 +1,18 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
-enum MessagePermission {
+enum Audience {
   everyone('everyone', 'Everyone'),
   following('following', 'Following');
 
-  const MessagePermission(this.value, this.label);
+  const Audience(this.value, this.label);
 
   final String value;
   final String label;
 
-  static MessagePermission fromValue(Object? value) => values.firstWhere(
+  static Audience fromValue(Object? value) => values.firstWhere(
     (p) => p.value == value,
-    orElse: () => MessagePermission.everyone,
+    orElse: () => Audience.everyone,
   );
 }
 
@@ -41,12 +41,17 @@ const supportedLanguages = {
 
 class UserSettings extends Equatable {
   const UserSettings({
-    this.whoCanMessageMe = MessagePermission.everyone,
+    this.whoCanMessageMe = Audience.everyone,
+    this.whoCanSeeMyPost = Audience.everyone,
     this.pushNotifications = true,
     this.emailNotifications = true,
+    this.activityNotifications = true,
     this.whisperNotifications = true,
     this.allowWhisperInvites = true,
     this.allowSpeakerRequests = true,
+    this.allowSnippetFromVoice = true,
+    this.showPostsInDiscovery = true,
+    this.allowContentInCurrents = true,
     this.theme = AppThemePreference.system,
     this.language = 'en-US',
   });
@@ -66,69 +71,103 @@ class UserSettings extends Equatable {
     final more = section('more');
 
     return UserSettings(
-      whoCanMessageMe: MessagePermission.fromValue(privacy['whoCanMessageMe']),
+      whoCanMessageMe: Audience.fromValue(privacy['whoCanMessageMe']),
+      whoCanSeeMyPost: Audience.fromValue(privacy['whoCanSeeMyPost']),
       pushNotifications: notification['pushNotifications'] as bool? ?? true,
       emailNotifications: notification['emailNotifications'] as bool? ?? true,
+      activityNotifications:
+          notification['activityNotifications'] as bool? ?? true,
       whisperNotifications:
           notification['whisperNotifications'] as bool? ?? true,
       allowWhisperInvites: more['allowWhisperInvites'] as bool? ?? true,
       allowSpeakerRequests: more['allowSpeakerRequests'] as bool? ?? true,
+      allowSnippetFromVoice: more['allowSnippetFromVoice'] as bool? ?? true,
+      showPostsInDiscovery: more['showPostsInDiscovery'] as bool? ?? true,
+      allowContentInCurrents: more['allowContentInCurrents'] as bool? ?? true,
       theme: AppThemePreference.fromValue(preferences['theme']),
       language: preferences['language'] as String? ?? 'en-US',
     );
   }
 
-  final MessagePermission whoCanMessageMe;
+  final Audience whoCanMessageMe;
+  final Audience whoCanSeeMyPost;
   final bool pushNotifications;
   final bool emailNotifications;
+  final bool activityNotifications;
   final bool whisperNotifications;
   final bool allowWhisperInvites;
   final bool allowSpeakerRequests;
+  final bool allowSnippetFromVoice;
+  final bool showPostsInDiscovery;
+  final bool allowContentInCurrents;
   final AppThemePreference theme;
   final String language;
 
   UserSettings copyWith({
-    MessagePermission? whoCanMessageMe,
+    Audience? whoCanMessageMe,
+    Audience? whoCanSeeMyPost,
     bool? pushNotifications,
     bool? emailNotifications,
+    bool? activityNotifications,
     bool? whisperNotifications,
     bool? allowWhisperInvites,
     bool? allowSpeakerRequests,
+    bool? allowSnippetFromVoice,
+    bool? showPostsInDiscovery,
+    bool? allowContentInCurrents,
     AppThemePreference? theme,
     String? language,
   }) => UserSettings(
     whoCanMessageMe: whoCanMessageMe ?? this.whoCanMessageMe,
+    whoCanSeeMyPost: whoCanSeeMyPost ?? this.whoCanSeeMyPost,
     pushNotifications: pushNotifications ?? this.pushNotifications,
     emailNotifications: emailNotifications ?? this.emailNotifications,
+    activityNotifications: activityNotifications ?? this.activityNotifications,
     whisperNotifications: whisperNotifications ?? this.whisperNotifications,
     allowWhisperInvites: allowWhisperInvites ?? this.allowWhisperInvites,
     allowSpeakerRequests: allowSpeakerRequests ?? this.allowSpeakerRequests,
+    allowSnippetFromVoice: allowSnippetFromVoice ?? this.allowSnippetFromVoice,
+    showPostsInDiscovery: showPostsInDiscovery ?? this.showPostsInDiscovery,
+    allowContentInCurrents:
+        allowContentInCurrents ?? this.allowContentInCurrents,
     theme: theme ?? this.theme,
     language: language ?? this.language,
   );
 
   Map<String, dynamic> toJson() => {
-    'privacy': {'whoCanMessageMe': whoCanMessageMe.value},
+    'privacy': {
+      'whoCanMessageMe': whoCanMessageMe.value,
+      'whoCanSeeMyPost': whoCanSeeMyPost.value,
+    },
     'notification': {
       'pushNotifications': pushNotifications,
       'emailNotifications': emailNotifications,
+      'activityNotifications': activityNotifications,
       'whisperNotifications': whisperNotifications,
     },
     'preferences': {'theme': theme.value, 'language': language},
     'more': {
       'allowWhisperInvites': allowWhisperInvites,
       'allowSpeakerRequests': allowSpeakerRequests,
+      'allowSnippetFromVoice': allowSnippetFromVoice,
+      'showPostsInDiscovery': showPostsInDiscovery,
+      'allowContentInCurrents': allowContentInCurrents,
     },
   };
 
   @override
   List<Object?> get props => [
     whoCanMessageMe,
+    whoCanSeeMyPost,
     pushNotifications,
     emailNotifications,
+    activityNotifications,
     whisperNotifications,
     allowWhisperInvites,
     allowSpeakerRequests,
+    allowSnippetFromVoice,
+    showPostsInDiscovery,
+    allowContentInCurrents,
     theme,
     language,
   ];

@@ -85,16 +85,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ).showSnackBar(SnackBar(content: Text(failure.message)));
   }
 
-  Future<void> _pickMessagePermission(UserSettings settings) async {
+  Future<void> _pickAudience({
+    required String title,
+    required Audience selected,
+    required UserSettings Function(Audience choice) apply,
+  }) async {
     final choice = await showSettingsChoice(
       context,
-      title: 'Who can message me',
-      options: {for (final p in MessagePermission.values) p: p.label},
-      selected: settings.whoCanMessageMe,
+      title: title,
+      options: {for (final a in Audience.values) a: a.label},
+      selected: selected,
     );
-    if (choice != null && choice != settings.whoCanMessageMe) {
-      _update(settings.copyWith(whoCanMessageMe: choice));
-    }
+    if (choice != null && choice != selected) _update(apply(choice));
   }
 
   @override
@@ -243,7 +245,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           child: SettingsRow(
             title: 'Who can message me',
             trailing: SettingsValueLink(value: settings.whoCanMessageMe.label),
-            onTap: () => _pickMessagePermission(settings),
+            onTap: () => _pickAudience(
+              title: 'Who can message me',
+              selected: settings.whoCanMessageMe,
+              apply: (a) => settings.copyWith(whoCanMessageMe: a),
+            ),
+          ),
+        ),
+        (
+          label: 'Who can see my post',
+          child: SettingsRow(
+            title: 'Who can see my post',
+            trailing: SettingsValueLink(value: settings.whoCanSeeMyPost.label),
+            onTap: () => _pickAudience(
+              title: 'Who can see my post',
+              selected: settings.whoCanSeeMyPost,
+              apply: (a) => settings.copyWith(whoCanSeeMyPost: a),
+            ),
           ),
         ),
         (
@@ -284,6 +302,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value: settings.emailNotifications,
               onChanged: (v) =>
                   _update(settings.copyWith(emailNotifications: v)),
+            ),
+          ),
+        ),
+        (
+          label: 'Activity notifications',
+          child: SettingsRow(
+            title: 'Activity notifications',
+            subtitle: 'Get notified about new likes, replies, and mentions.',
+            trailing: SettingsSwitch(
+              value: settings.activityNotifications,
+              onChanged: (v) =>
+                  _update(settings.copyWith(activityNotifications: v)),
             ),
           ),
         ),
@@ -359,8 +389,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
           ),
+          (
+            label: 'Allow snippet creation from my voice',
+            child: SettingsRow(
+              title: 'Allow snippet creation from my voice',
+              subtitle:
+                  'Let others create short clips from your whisper '
+                  'contribution',
+              trailing: SettingsSwitch(
+                value: settings.allowSnippetFromVoice,
+                onChanged: (v) =>
+                    _update(settings.copyWith(allowSnippetFromVoice: v)),
+              ),
+            ),
+          ),
         ],
       ),
+      _Section(const SettingsHeading('Content & Discovery', large: false), [
+        (
+          label: 'Show my posts in discovery',
+          child: SettingsRow(
+            title: 'Show my posts in discovery',
+            trailing: SettingsSwitch(
+              value: settings.showPostsInDiscovery,
+              onChanged: (v) =>
+                  _update(settings.copyWith(showPostsInDiscovery: v)),
+            ),
+          ),
+        ),
+        (
+          label: 'Allow my content in Currents',
+          child: SettingsRow(
+            title: 'Allow my content in Currents',
+            trailing: SettingsSwitch(
+              value: settings.allowContentInCurrents,
+              onChanged: (v) =>
+                  _update(settings.copyWith(allowContentInCurrents: v)),
+            ),
+          ),
+        ),
+      ]),
     ];
   }
 }

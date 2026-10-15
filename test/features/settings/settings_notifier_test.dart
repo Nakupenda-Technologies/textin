@@ -10,14 +10,24 @@ void main() {
       'success': true,
       'data': {
         'settings': {
-          'privacy': {'whoCanMessageMe': 'following'},
+          'privacy': {
+            'whoCanMessageMe': 'following',
+            'whoCanSeeMyPost': 'following',
+          },
           'notification': {
             'pushNotifications': false,
             'emailNotifications': true,
+            'activityNotifications': false,
             'whisperNotifications': false,
           },
           'preferences': {'theme': 'dark', 'language': 'sw-KE'},
-          'more': {'allowWhisperInvites': false, 'allowSpeakerRequests': true},
+          'more': {
+            'allowWhisperInvites': false,
+            'allowSpeakerRequests': true,
+            'allowSnippetFromVoice': false,
+            'showPostsInDiscovery': false,
+            'allowContentInCurrents': true,
+          },
         },
       },
     });
@@ -25,7 +35,11 @@ void main() {
     expect(
       settings,
       const UserSettings(
-        whoCanMessageMe: MessagePermission.following,
+        whoCanMessageMe: Audience.following,
+        whoCanSeeMyPost: Audience.following,
+        activityNotifications: false,
+        allowSnippetFromVoice: false,
+        showPostsInDiscovery: false,
         pushNotifications: false,
         whisperNotifications: false,
         allowWhisperInvites: false,
