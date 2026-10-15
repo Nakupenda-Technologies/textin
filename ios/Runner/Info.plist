@@ -24,8 +24,12 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>TEXTin uses your camera to take photos you send in chats.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>TEXTin uses your microphone to record voice notes.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>TEXTin uses your photo library to send photos in chats.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
