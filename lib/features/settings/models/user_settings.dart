@@ -50,8 +50,6 @@ class UserSettings extends Equatable {
     this.allowWhisperInvites = true,
     this.allowSpeakerRequests = true,
     this.allowSnippetFromVoice = true,
-    this.showPostsInDiscovery = true,
-    this.allowContentInCurrents = true,
     this.theme = AppThemePreference.system,
     this.language = 'en-US',
   });
@@ -82,8 +80,6 @@ class UserSettings extends Equatable {
       allowWhisperInvites: more['allowWhisperInvites'] as bool? ?? true,
       allowSpeakerRequests: more['allowSpeakerRequests'] as bool? ?? true,
       allowSnippetFromVoice: more['allowSnippetFromVoice'] as bool? ?? true,
-      showPostsInDiscovery: more['showPostsInDiscovery'] as bool? ?? true,
-      allowContentInCurrents: more['allowContentInCurrents'] as bool? ?? true,
       theme: AppThemePreference.fromValue(preferences['theme']),
       language: preferences['language'] as String? ?? 'en-US',
     );
@@ -98,8 +94,6 @@ class UserSettings extends Equatable {
   final bool allowWhisperInvites;
   final bool allowSpeakerRequests;
   final bool allowSnippetFromVoice;
-  final bool showPostsInDiscovery;
-  final bool allowContentInCurrents;
   final AppThemePreference theme;
   final String language;
 
@@ -113,8 +107,6 @@ class UserSettings extends Equatable {
     bool? allowWhisperInvites,
     bool? allowSpeakerRequests,
     bool? allowSnippetFromVoice,
-    bool? showPostsInDiscovery,
-    bool? allowContentInCurrents,
     AppThemePreference? theme,
     String? language,
   }) => UserSettings(
@@ -127,9 +119,6 @@ class UserSettings extends Equatable {
     allowWhisperInvites: allowWhisperInvites ?? this.allowWhisperInvites,
     allowSpeakerRequests: allowSpeakerRequests ?? this.allowSpeakerRequests,
     allowSnippetFromVoice: allowSnippetFromVoice ?? this.allowSnippetFromVoice,
-    showPostsInDiscovery: showPostsInDiscovery ?? this.showPostsInDiscovery,
-    allowContentInCurrents:
-        allowContentInCurrents ?? this.allowContentInCurrents,
     theme: theme ?? this.theme,
     language: language ?? this.language,
   );
@@ -150,8 +139,6 @@ class UserSettings extends Equatable {
       'allowWhisperInvites': allowWhisperInvites,
       'allowSpeakerRequests': allowSpeakerRequests,
       'allowSnippetFromVoice': allowSnippetFromVoice,
-      'showPostsInDiscovery': showPostsInDiscovery,
-      'allowContentInCurrents': allowContentInCurrents,
     },
   };
 
@@ -166,8 +153,6 @@ class UserSettings extends Equatable {
     allowWhisperInvites,
     allowSpeakerRequests,
     allowSnippetFromVoice,
-    showPostsInDiscovery,
-    allowContentInCurrents,
     theme,
     language,
   ];

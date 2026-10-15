@@ -49,14 +49,13 @@ void main() {
       'Notification',
       'Preferences',
       'More',
-      'Content & Discovery',
     ]) {
       expect(find.text(heading), findsOneWidget);
     }
     expect(find.text('ada@example.com'), findsOneWidget);
     expect(find.text('English (US)'), findsOneWidget);
     expect(find.text('Who can see my post'), findsOneWidget);
-    expect(find.text('Allow my content in Currents'), findsOneWidget);
+    expect(find.text('Content & Discovery'), findsNothing);
   });
 
   testWidgets('search narrows the list to matching settings', (tester) async {

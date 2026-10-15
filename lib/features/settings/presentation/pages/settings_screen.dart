@@ -405,30 +405,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ],
       ),
-      _Section(const SettingsHeading('Content & Discovery', large: false), [
-        (
-          label: 'Show my posts in discovery',
-          child: SettingsRow(
-            title: 'Show my posts in discovery',
-            trailing: SettingsSwitch(
-              value: settings.showPostsInDiscovery,
-              onChanged: (v) =>
-                  _update(settings.copyWith(showPostsInDiscovery: v)),
-            ),
-          ),
-        ),
-        (
-          label: 'Allow my content in Currents',
-          child: SettingsRow(
-            title: 'Allow my content in Currents',
-            trailing: SettingsSwitch(
-              value: settings.allowContentInCurrents,
-              onChanged: (v) =>
-                  _update(settings.copyWith(allowContentInCurrents: v)),
-            ),
-          ),
-        ),
-      ]),
     ];
   }
 }
