@@ -6,6 +6,7 @@ import '../core/errors/failure.dart';
 import '../core/navigation/navigator_key.dart';
 import '../core/network/session_manager.dart';
 import '../features/auth/notifier/session_notifier.dart';
+import '../features/settings/notifier/settings_notifier.dart';
 import '../router/app_router.dart';
 import '../shared/theme/app_theme.dart';
 import '../shared/widgets/app_toast.dart';
@@ -69,7 +70,7 @@ class _TextinMaterialAppState extends ConsumerState<_TextinMaterialApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
+      themeMode: ref.watch(appThemeProvider).mode,
       onGenerateRoute: AppRouter.onGenerateRoute,
       initialRoute: AppRouter.launch,
     );

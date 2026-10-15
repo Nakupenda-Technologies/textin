@@ -1,33 +1,8 @@
-import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:textin/core/errors/failure.dart';
-import 'package:textin/features/settings/data_source/settings_remote_data_source.dart';
 import 'package:textin/features/settings/models/user_settings.dart';
 import 'package:textin/features/settings/notifier/settings_notifier.dart';
-import 'package:textin/features/settings/repository/settings_repository.dart';
 
-class _FakeSettingsRepository extends SettingsRepository {
-  _FakeSettingsRepository() : super(_NoRemote());
-
-  UserSettings stored = const UserSettings(theme: AppThemePreference.dark);
-  bool failUpdates = false;
-
-  @override
-  Future<Either<Failure, UserSettings>> fetchSettings() async => Right(stored);
-
-  @override
-  Future<Either<Failure, UserSettings>> updateSettings(
-    UserSettings settings,
-  ) async {
-    if (failUpdates) return const Left(ServerFailure('Offline'));
-    return Right(stored = settings);
-  }
-}
-
-class _NoRemote implements SettingsRemoteDataSource {
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
+import '../../helpers/fake_settings_repository.dart';
 
 void main() {
   test('settings are read from their sections', () {
@@ -63,7 +38,9 @@ void main() {
   test('loading applies the saved theme', () async {
     final themes = <AppThemePreference>[];
     final notifier = SettingsNotifier(
-      _FakeSettingsRepository(),
+      FakeSettingsRepository(
+        stored: const UserSettings(theme: AppThemePreference.dark),
+      ),
       onThemeChanged: themes.add,
     );
     addTearDown(notifier.dispose);
@@ -75,7 +52,7 @@ void main() {
   });
 
   test('a failed update rolls the change back', () async {
-    final repository = _FakeSettingsRepository()..failUpdates = true;
+    final repository = FakeSettingsRepository(failUpdates: true);
     final notifier = SettingsNotifier(repository, onThemeChanged: (_) {});
     addTearDown(notifier.dispose);
     await notifier.load();
