@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/text_style.dart';
-import '../../../../router/app_router.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_shimmer.dart';
@@ -31,10 +30,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _signOut() async {
     setState(() => _isSigningOut = true);
-    final navigator = Navigator.of(context, rootNavigator: true);
-    await ref.read(authRepositoryProvider).signOut();
-    ref.read(currentUserProvider.notifier).state = null;
-    navigator.pushNamedAndRemoveUntil(AppRouter.login, (_) => false);
+    await signOutToLogin(ref);
   }
 
   void _open(Widget screen) => Navigator.of(
