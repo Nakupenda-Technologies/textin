@@ -33,4 +33,27 @@ void main() {
     expect(find.byIcon(Icons.mic_rounded), findsNothing);
     expect(showsSend(), isTrue);
   });
+
+  testWidgets('the plus button offers photo, camera and audio', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: TextingComposer(
+            onSendText: (_) {},
+            onSendImage: (_) {},
+            onSendVoice: (_, _) {},
+            onTyping: (_) {},
+            onOpenAura: () {},
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Photo library'), findsOneWidget);
+    expect(find.text('Camera'), findsOneWidget);
+    expect(find.text('Audio'), findsOneWidget);
+  });
 }

@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
@@ -10,8 +12,12 @@ import 'package:record/record.dart';
 import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../models/message.dart';
+import 'attachment_sheet.dart';
 
 enum _RecordingPhase { idle, recording, paused, reviewing }
+
+const _maxUploadBytes = 8 * 1024 * 1024;
+const _maxVoiceSeconds = 600;
 
 class TextingComposer extends StatefulWidget {
   const TextingComposer({
@@ -180,16 +186,76 @@ class _TextingComposerState extends State<TextingComposer> {
     widget.onTyping(false);
   }
 
-  Future<void> _pickImage() async {
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<bool> _fitsUploadLimit(String path) async {
+    if (await File(path).length() <= _maxUploadBytes) return true;
+    _showMessage('Attachments must be 8 MB or smaller.');
+    return false;
+  }
+
+  Future<void> _showAttachmentOptions() async {
+    final option = await AttachmentSheet.show(context);
+    switch (option) {
+      case AttachmentOption.gallery:
+        await _pickImage(ImageSource.gallery);
+      case AttachmentOption.camera:
+        await _pickImage(ImageSource.camera);
+      case AttachmentOption.audio:
+        await _pickAudio();
+      case null:
+        break;
+    }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final XFile? image;
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 80,
+      image = await _picker.pickImage(source: source, imageQuality: 80);
+    } on PlatformException {
+      _showMessage(
+        source == ImageSource.camera
+            ? 'Allow camera access to take photos.'
+            : 'Allow photo access to send pictures.',
       );
-      if (image != null) {
-        widget.onSendImage(image.path);
-      }
-    } catch (_) {}
+      return;
+    }
+    if (image == null || !await _fitsUploadLimit(image.path)) return;
+    widget.onSendImage(image.path);
+  }
+
+  Future<void> _pickAudio() async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['mp3', 'm4a', 'aac', 'wav', 'ogg'],
+    );
+    final path = result?.files.single.path;
+    if (path == null || !await _fitsUploadLimit(path)) return;
+
+    final player = AudioPlayer();
+    final Duration? duration;
+    try {
+      duration = await player.setFilePath(path);
+    } on PlayerException {
+      _showMessage("That audio file couldn't be read.");
+      return;
+    } finally {
+      await player.dispose();
+    }
+
+    final seconds = ((duration?.inMilliseconds ?? 0) / 1000).ceil();
+    if (seconds == 0) {
+      _showMessage("That audio file couldn't be read.");
+    } else if (seconds > _maxVoiceSeconds) {
+      _showMessage('Audio must be 10 minutes or shorter.');
+    } else {
+      widget.onSendVoice(path, seconds);
+    }
   }
 
   @override
@@ -226,7 +292,7 @@ class _TextingComposerState extends State<TextingComposer> {
                           ),
                         )
                       : _CircleButton(
-                          onTap: _pickImage,
+                          onTap: _showAttachmentOptions,
                           child: const Icon(
                             Icons.add,
                             size: 20,
