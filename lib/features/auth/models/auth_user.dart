@@ -8,6 +8,7 @@ class AuthUser extends Equatable {
     this.lastName,
     this.email,
     this.profilePicture,
+    this.bio,
   });
 
   final String id;
@@ -16,6 +17,7 @@ class AuthUser extends Equatable {
   final String? lastName;
   final String? email;
   final String? profilePicture;
+  final String? bio;
 
   String get displayName {
     final fullName = [
@@ -42,6 +44,7 @@ class AuthUser extends Equatable {
       lastName: _string(source['lastName']),
       email: _string(source['email']),
       profilePicture: _string(source['profilePicture']),
+      bio: _string(source['bio']),
     );
   }
 
@@ -52,6 +55,7 @@ class AuthUser extends Equatable {
     'lastName': lastName,
     'email': email,
     'profilePicture': profilePicture,
+    'bio': bio,
   };
 
   static String? _string(Object? value) => switch (value) {
@@ -68,5 +72,6 @@ class AuthUser extends Equatable {
     lastName,
     email,
     profilePicture,
+    bio,
   ];
 }
