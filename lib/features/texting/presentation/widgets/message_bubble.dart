@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/widgets/app_shimmer.dart';
 import '../../models/chat_customization.dart';
 import '../../models/message.dart';
 import 'mood_palette.dart';
@@ -194,12 +195,8 @@ class _MessageBubbleState extends State<MessageBubble> {
       child: switch ((url, localPath)) {
         (final String url, _) when url.isNotEmpty => CachedNetworkImage(
           imageUrl: url,
-          placeholder: (ctx, _) => Container(
-            height: 180,
-            color: Colors.black12,
-            child: const Center(
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
+          placeholder: (ctx, _) => const AppShimmer(
+            child: ShimmerBlock(width: 220, height: 180, radius: 0),
           ),
           errorWidget: (ctx, _, _) => brokenImage,
         ),

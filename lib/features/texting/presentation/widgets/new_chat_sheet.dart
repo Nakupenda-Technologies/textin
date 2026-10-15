@@ -4,6 +4,7 @@ import '../../../../core/errors/error_message.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/widgets/app_shimmer.dart';
 import '../../models/following_user.dart';
 import '../../repository/texting_repository.dart';
 
@@ -130,7 +131,7 @@ class _NewChatSheetState extends State<NewChatSheet> {
           ),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const ShimmerList()
                 : _loadError != null
                 ? Center(
                     child: Padding(

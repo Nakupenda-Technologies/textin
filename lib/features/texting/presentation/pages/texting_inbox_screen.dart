@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/di/locator.dart';
 import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/widgets/app_shimmer.dart';
 import '../../../auth/notifier/session_notifier.dart';
 import '../../models/conversation.dart';
 import '../../notifier/inbox_notifier.dart';
@@ -135,7 +136,7 @@ class _TextingInboxScreenState extends ConsumerState<TextingInboxScreen> {
 
   Widget _buildConversations(InboxState state) {
     if (state.status == InboxStatus.loading && state.conversations.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const ShimmerList();
     }
 
     final displayed = state.displayedConversations;

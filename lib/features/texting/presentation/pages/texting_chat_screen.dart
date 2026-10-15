@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/widgets/app_shimmer.dart';
 import '../../models/conversation.dart';
 import '../../notifier/chat_notifier.dart';
 import '../../notifier/inbox_notifier.dart';
@@ -102,7 +103,7 @@ class _ChatViewState extends ConsumerState<_ChatView> {
                 builder: (context) {
                   if (state.status == ChatStatus.loading &&
                       state.messages.isEmpty) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const _MessagesShimmer();
                   }
 
                   if (state.messages.isEmpty && !state.isOtherUserTyping) {
@@ -373,6 +374,40 @@ class _DayChip extends StatelessWidget {
             color: isDark ? cs.onSurface : AppTheme.textingDateChipFg,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MessagesShimmer extends StatelessWidget {
+  const _MessagesShimmer();
+
+  static const _bubbles = [
+    (false, 180.0),
+    (true, 140.0),
+    (false, 220.0),
+    (false, 120.0),
+    (true, 200.0),
+    (false, 160.0),
+    (true, 120.0),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return AppShimmer(
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        children: [
+          for (final (isMe, width) in _bubbles)
+            Align(
+              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: ShimmerBlock(width: width, height: 38, radius: 20),
+              ),
+            ),
+        ],
       ),
     );
   }
