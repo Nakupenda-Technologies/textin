@@ -41,7 +41,7 @@ void main() {
     expect(find.text('@adaobi'), findsOneWidget);
     expect(find.text('ada@example.com'), findsOneWidget);
     expect(find.text('Who can message me'), findsOneWidget);
-    expect(find.text('Push notifications'), findsOneWidget);
+    expect(find.text('Blocked users'), findsOneWidget);
   });
 
   testWidgets('a wrong password keeps the account', (tester) async {
@@ -66,6 +66,7 @@ void main() {
     );
     await tester.pump();
 
+    await tester.scrollUntilVisible(find.text('Delete account'), 300);
     await tester.ensureVisible(find.text('Delete account'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete account'));

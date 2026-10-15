@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:textin/core/errors/failure.dart';
 import 'package:textin/features/settings/data_source/settings_remote_data_source.dart';
+import 'package:textin/features/settings/models/listed_user.dart';
 import 'package:textin/features/settings/models/user_settings.dart';
 import 'package:textin/features/settings/repository/settings_repository.dart';
 
@@ -16,6 +17,22 @@ class FakeSettingsRepository extends SettingsRepository {
   final emailChangeRequests = <String>[];
   final passwordChanges = <(String, String)>[];
   final deletePasswords = <String?>[];
+  List<ListedUser> listedUsers = const [];
+  final removedUsers = <(UserListKind, String)>[];
+
+  @override
+  Future<Either<Failure, List<ListedUser>>> fetchUsers(
+    UserListKind kind,
+  ) async => Right(listedUsers);
+
+  @override
+  Future<Either<Failure, Unit>> removeUser(
+    UserListKind kind,
+    String userId,
+  ) async {
+    removedUsers.add((kind, userId));
+    return const Right(unit);
+  }
 
   @override
   Future<Either<Failure, Unit>> deleteAccount(String? password) async {

@@ -9,11 +9,13 @@ import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_shimmer.dart';
 import '../../../auth/notifier/session_notifier.dart';
+import '../../../settings/data_source/settings_remote_data_source.dart';
 import '../../../settings/models/user_settings.dart';
 import '../../../settings/notifier/settings_notifier.dart';
 import '../../../settings/presentation/pages/change_email_screen.dart';
 import '../../../settings/presentation/pages/change_password_screen.dart';
 import '../../../settings/presentation/pages/edit_profile_screen.dart';
+import '../../../settings/presentation/pages/user_list_screen.dart';
 import '../../../settings/presentation/widgets/account_dialogs.dart';
 import '../../../settings/presentation/widgets/settings_tiles.dart';
 import '../../../settings/repository/settings_repository.dart';
@@ -192,6 +194,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               selected: settings.whoCanMessageMe,
               apply: (p) => settings.copyWith(whoCanMessageMe: p),
             ),
+          ),
+          SettingsTile(
+            icon: PhosphorIconsRegular.prohibit,
+            title: 'Blocked users',
+            onTap: () =>
+                _open(const UserListScreen(kind: UserListKind.blocked)),
+          ),
+          SettingsTile(
+            icon: PhosphorIconsRegular.speakerSlash,
+            title: 'Muted users',
+            onTap: () => _open(const UserListScreen(kind: UserListKind.muted)),
           ),
         ],
       ),
