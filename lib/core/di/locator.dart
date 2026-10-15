@@ -4,6 +4,8 @@ import '../../features/auth/data_source/auth_remote_data_source.dart';
 import '../../features/auth/repository/auth_repository.dart';
 import '../../features/home/data_source/home_data_source.dart';
 import '../../features/home/repository/home_repository.dart';
+import '../../features/settings/data_source/settings_remote_data_source.dart';
+import '../../features/settings/repository/settings_repository.dart';
 import '../../features/texting/data_source/texting_remote_data_source.dart';
 import '../../features/texting/repository/texting_repository.dart';
 import '../../features/texting/repository/texting_repository_impl.dart';
@@ -73,6 +75,13 @@ Future<void> setupLocator() async {
   );
   locator.registerLazySingleton<WhispersRepository>(
     () => WhispersRepositoryImpl(locator<WhispersRemoteDataSource>()),
+  );
+
+  locator.registerLazySingleton<SettingsRemoteDataSource>(
+    () => SettingsRemoteDataSourceImpl(locator<BaseApiClients>()),
+  );
+  locator.registerLazySingleton<SettingsRepository>(
+    () => SettingsRepository(locator<SettingsRemoteDataSource>()),
   );
 
   locator.registerLazySingleton<HomeDataSource>(

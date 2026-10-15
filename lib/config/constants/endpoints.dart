@@ -38,6 +38,18 @@ class Endpoints {
   // Users & Contacts
   static String userFollowing(String username) => '/users/$username/following';
 
+  // Settings
+  static const String settings = '/settings/me';
+  static const String blockedUsers = '/settings/me/blocked';
+  static const String mutedUsers = '/settings/me/muted';
+  static const String emailChangeRequest = '/settings/me/account/email/request';
+  static const String emailChangeConfirm = '/settings/me/account/email/confirm';
+  static const String changePassword = '/settings/me/account/password';
+  static const String deactivateAccount = '/settings/me/account/deactivate';
+  static const String deleteAccount = '/settings/me/account/delete';
+  static String userById(String userId) => '/users/id/$userId';
+  static const String profilePictureUpload = '/media/upload/profiles';
+
   // Whispers
   static const String liveWhispers = '/whispers/live';
 
