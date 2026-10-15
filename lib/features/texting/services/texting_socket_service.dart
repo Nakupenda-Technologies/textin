@@ -8,12 +8,18 @@ class TextingSocketService {
 
   final WebSocketService _ws;
   final String? Function() _accessToken;
+  final Set<String> _joinedChatIds = {};
 
   static String? _noToken() => null;
 
   void connect() {
     final token = _accessToken() ?? '';
     final url = '${Env.websocketBaseUrl}/messaging';
+    _ws.setOnConnectCallback(() {
+      for (final chatId in _joinedChatIds) {
+        _ws.emit('join_chat', {'chatId': chatId});
+      }
+    });
     _ws.connect(
       url,
       authToken: token.isEmpty ? null : token,
@@ -26,10 +32,12 @@ class TextingSocketService {
   }
 
   void joinChat(String chatId) {
+    _joinedChatIds.add(chatId);
     _ws.emit('join_chat', {'chatId': chatId});
   }
 
   void leaveChat(String chatId) {
+    _joinedChatIds.remove(chatId);
     _ws.emit('leave_chat', {'chatId': chatId});
   }
 
