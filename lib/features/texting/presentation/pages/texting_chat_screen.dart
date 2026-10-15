@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/app_shimmer.dart';
+import '../../../user_profile/presentation/pages/user_profile_screen.dart';
 import '../../models/conversation.dart';
 import '../../notifier/chat_notifier.dart';
 import '../../notifier/inbox_notifier.dart';
@@ -201,6 +202,7 @@ class _ChatHeader extends StatelessWidget implements PreferredSizeWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cs = Theme.of(context).colorScheme;
     final subtitle = _subtitle;
+    final otherUserId = conversation.otherUserId;
 
     return Material(
       color: cs.surface,
@@ -215,67 +217,94 @@ class _ChatHeader extends StatelessWidget implements PreferredSizeWidget {
                 onTap: () => Navigator.of(context).maybePop(),
               ),
               const SizedBox(width: 12),
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: cs.onSurface.withValues(alpha: 0.10),
-                backgroundImage: conversation.avatarUrl != null
-                    ? CachedNetworkImageProvider(conversation.avatarUrl!)
-                    : null,
-                child: conversation.avatarUrl == null
-                    ? Text(
-                        conversation.name.isNotEmpty
-                            ? conversation.name[0].toUpperCase()
-                            : '?',
-                        style: TextStyle(
-                          color: cs.onSurface.withValues(alpha: 0.55),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            conversation.name,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? cs.onSurface : AppTheme.subtitle,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: otherUserId == null
+                      ? null
+                      : () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => UserProfileScreen(
+                              userId: otherUserId,
+                              name: conversation.name,
+                              avatarUrl: conversation.avatarUrl,
                             ),
                           ),
                         ),
-                        if (conversation.hasFireBadge) ...[
-                          const SizedBox(width: 4),
-                          const Text('🔥', style: TextStyle(fontSize: 12)),
-                        ],
-                      ],
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          fontSize: 10,
-                          letterSpacing: -0.04,
-                          fontStyle: isTyping
-                              ? FontStyle.italic
-                              : FontStyle.normal,
-                          color: isTyping
-                              ? AppTheme.textingSentBubble
-                              : AppTheme.iconColor,
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: cs.onSurface.withValues(alpha: 0.10),
+                        backgroundImage: conversation.avatarUrl != null
+                            ? CachedNetworkImageProvider(
+                                conversation.avatarUrl!,
+                              )
+                            : null,
+                        child: conversation.avatarUrl == null
+                            ? Text(
+                                conversation.name.isNotEmpty
+                                    ? conversation.name[0].toUpperCase()
+                                    : '?',
+                                style: TextStyle(
+                                  color: cs.onSurface.withValues(alpha: 0.55),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    conversation.name,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark
+                                          ? cs.onSurface
+                                          : AppTheme.subtitle,
+                                    ),
+                                  ),
+                                ),
+                                if (conversation.hasFireBadge) ...[
+                                  const SizedBox(width: 4),
+                                  const Text(
+                                    '🔥',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            if (subtitle != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                subtitle,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  letterSpacing: -0.04,
+                                  fontStyle: isTyping
+                                      ? FontStyle.italic
+                                      : FontStyle.normal,
+                                  color: isTyping
+                                      ? AppTheme.textingSentBubble
+                                      : AppTheme.iconColor,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
               ),
               _HeaderButton(
