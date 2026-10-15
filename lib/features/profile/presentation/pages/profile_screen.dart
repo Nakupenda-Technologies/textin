@@ -10,6 +10,7 @@ import '../../../../shared/widgets/app_shimmer.dart';
 import '../../../auth/notifier/session_notifier.dart';
 import '../../../settings/models/user_settings.dart';
 import '../../../settings/notifier/settings_notifier.dart';
+import '../../../settings/presentation/pages/edit_profile_screen.dart';
 import '../../../settings/presentation/widgets/settings_tiles.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -35,6 +36,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     ref.read(currentUserProvider.notifier).state = null;
     navigator.pushNamedAndRemoveUntil(AppRouter.login, (_) => false);
   }
+
+  void _open(Widget screen) => Navigator.of(
+    context,
+  ).push(MaterialPageRoute<void>(builder: (_) => screen));
 
   void _update(UserSettings settings) =>
       ref.read(settingsNotifierProvider.notifier).update(settings);
@@ -123,6 +128,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     final settings = state.settings;
     return [
+      SettingsSection(
+        title: 'Account',
+        children: [
+          SettingsTile(
+            icon: PhosphorIconsRegular.userCircleGear,
+            title: 'Edit profile',
+            onTap: () => _open(const EditProfileScreen()),
+          ),
+        ],
+      ),
       SettingsSection(
         title: 'Privacy',
         children: [
