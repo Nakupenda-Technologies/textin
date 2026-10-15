@@ -1,16 +1,16 @@
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'app/app.dart';
 import 'bootstrap.dart';
 import 'core/di/locator.dart';
+import 'core/storage/session_store.dart';
 import 'services/connectivity_service.dart';
 import 'services/local_storage_service.dart';
 
 Future<void> mainCommon() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Bloc.observer = const AppBlocObserver();
 
   try {
     await SystemChrome.setPreferredOrientations([
@@ -47,5 +47,17 @@ Future<void> mainCommon() async {
 
   await setupLocator();
 
-  runApp(const TextinApp());
+  try {
+    await locator<SessionStore>().resetIfFreshInstall();
+  } catch (e, st) {
+    developer.log(
+      'SessionStore.resetIfFreshInstall failed: $e',
+      name: 'Textin',
+      stackTrace: st,
+    );
+  }
+
+  await locator<SessionStore>().load();
+
+  runApp(const TextinApp(observers: [AppProviderObserver()]));
 }

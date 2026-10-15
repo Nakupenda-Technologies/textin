@@ -1,38 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/di/locator.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/text_style.dart';
-import '../../cubit/inbox/inbox_cubit.dart';
-import '../../cubit/secret_box/secret_box_cubit.dart';
-import '../../cubit/secret_box/secret_box_state.dart';
-import '../../repository/texting_repository.dart';
+import '../../notifier/secret_box_notifier.dart';
 import 'secret_box_screen.dart';
 
-class SecretBoxPinScreen extends StatelessWidget {
+class SecretBoxPinScreen extends ConsumerStatefulWidget {
   const SecretBoxPinScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final myUserId = context.read<InboxCubit>().myUserId;
-    return BlocProvider(
-      create: (_) => SecretBoxCubit(
-        repository: locator<TextingRepository>(),
-        myUserId: myUserId,
-      ),
-      child: const _PinView(),
-    );
-  }
+  ConsumerState<SecretBoxPinScreen> createState() => _SecretBoxPinScreenState();
 }
 
-class _PinView extends StatefulWidget {
-  const _PinView();
-
-  @override
-  State<_PinView> createState() => _PinViewState();
-}
-
-class _PinViewState extends State<_PinView> {
+class _SecretBoxPinScreenState extends ConsumerState<SecretBoxPinScreen> {
   String _enteredPin = '';
 
   void _onKeyPress(String digit) {
@@ -51,10 +31,12 @@ class _PinViewState extends State<_PinView> {
   }
 
   Future<void> _submitPin() async {
-    final cubit = context.read<SecretBoxCubit>();
-    if (!cubit.state.hasPin) {
+    final notifier = ref.read(secretBoxNotifierProvider.notifier);
+    final state = ref.read(secretBoxNotifierProvider);
+
+    if (!state.hasPin) {
       // Set new PIN
-      await cubit.setPin(_enteredPin);
+      await notifier.setPin(_enteredPin);
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -63,7 +45,7 @@ class _PinViewState extends State<_PinView> {
       }
     } else {
       // Verify existing PIN
-      final ok = await cubit.verifyPin(_enteredPin);
+      final ok = await notifier.verifyPin(_enteredPin);
       if (ok && mounted) {
         Navigator.pushReplacement(
           context,
@@ -77,6 +59,9 @@ class _PinViewState extends State<_PinView> {
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(secretBoxNotifierProvider);
+    final isSetup = !state.hasPin;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -88,58 +73,53 @@ class _PinViewState extends State<_PinView> {
         ),
       ),
       body: SafeArea(
-        child: BlocBuilder<SecretBoxCubit, SecretBoxState>(
-          builder: (context, state) {
-            final isSetup = !state.hasPin;
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Column(
               children: [
-                Column(
-                  children: [
-                    Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.lock_rounded,
-                        color: AppColors.primary,
-                        size: 36,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      isSetup ? 'Create Secret PIN' : 'Enter Secret PIN',
-                      style: AppTextStyle.heading1.copyWith(fontSize: 24),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      isSetup
-                          ? 'Set a 4-digit PIN to secure your private chats'
-                          : 'Enter your 4-digit PIN to access hidden chats',
-                      style: AppTextStyle.bodySecondary,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 28),
-                    _buildPinDots(),
-                    if (state.errorMessage != null) ...[
-                      const SizedBox(height: 14),
-                      Text(
-                        state.errorMessage!,
-                        style: const TextStyle(
-                          color: AppColors.error,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ],
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.lock_rounded,
+                    color: AppColors.primary,
+                    size: 36,
+                  ),
                 ),
-                _buildKeypad(),
+                const SizedBox(height: 16),
+                Text(
+                  isSetup ? 'Create Secret PIN' : 'Enter Secret PIN',
+                  style: AppTextStyle.heading1.copyWith(fontSize: 24),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  isSetup
+                      ? 'Set a 4-digit PIN to secure your private chats'
+                      : 'Enter your 4-digit PIN to access hidden chats',
+                  style: AppTextStyle.bodySecondary,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                _buildPinDots(),
+                if (state.errorMessage != null) ...[
+                  const SizedBox(height: 14),
+                  Text(
+                    state.errorMessage!,
+                    style: const TextStyle(
+                      color: AppColors.error,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
               ],
-            );
-          },
+            ),
+            _buildKeypad(),
+          ],
         ),
       ),
     );

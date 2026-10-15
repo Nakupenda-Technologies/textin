@@ -1,7 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/errors/error_message.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/text_style.dart';
+import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/widgets/app_shimmer.dart';
 import '../../models/following_user.dart';
 import '../../repository/texting_repository.dart';
 
@@ -10,11 +13,13 @@ class NewChatSheet extends StatefulWidget {
     super.key,
     required this.repository,
     required this.myUserId,
+    required this.myUsername,
     required this.onSelectUser,
   });
 
   final TextingRepository repository;
   final String myUserId;
+  final String? myUsername;
   final ValueChanged<FollowingUser> onSelectUser;
 
   @override
@@ -25,6 +30,7 @@ class _NewChatSheetState extends State<NewChatSheet> {
   final TextEditingController _searchCtrl = TextEditingController();
   List<FollowingUser> _users = [];
   bool _isLoading = false;
+  String? _loadError;
   String _query = '';
 
   @override
@@ -34,56 +40,30 @@ class _NewChatSheetState extends State<NewChatSheet> {
   }
 
   Future<void> _loadUsers() async {
-    setState(() => _isLoading = true);
-    final result = await widget.repository.fetchFollowingUsers('me');
+    final username = widget.myUsername;
+    if (username == null || username.isEmpty) {
+      setState(() {
+        _users = [];
+        _loadError = "We couldn't load your contacts. Sign out and sign in again.";
+      });
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+    final result = await widget.repository.fetchFollowingUsers(username);
+    if (!mounted) return;
     result.fold(
-      (failure) {
-        // Fallback mock contacts for development/offline
-        setState(() {
-          _isLoading = false;
-          _users = [
-            const FollowingUser(
-              id: 'u1',
-              username: 'alexandra_m',
-              displayName: 'Alexandra Miller',
-              bio: 'Design lead & explorer',
-            ),
-            const FollowingUser(
-              id: 'u2',
-              username: 'dev_samuel',
-              displayName: 'Samuel O.',
-              bio: 'Flutter & backend engineer',
-            ),
-            const FollowingUser(
-              id: 'u3',
-              username: 'maya_lin',
-              displayName: 'Maya Lin',
-              bio: 'Musician & traveler',
-            ),
-          ];
-        });
-      },
-      (list) {
-        setState(() {
-          _isLoading = false;
-          _users = list.isEmpty
-              ? [
-                  const FollowingUser(
-                    id: 'u1',
-                    username: 'alexandra_m',
-                    displayName: 'Alexandra Miller',
-                    bio: 'Design lead & explorer',
-                  ),
-                  const FollowingUser(
-                    id: 'u2',
-                    username: 'dev_samuel',
-                    displayName: 'Samuel O.',
-                    bio: 'Flutter & backend engineer',
-                  ),
-                ]
-              : list;
-        });
-      },
+      (failure) => setState(() {
+        _isLoading = false;
+        _users = [];
+        _loadError = userMessage(failure);
+      }),
+      (list) => setState(() {
+        _isLoading = false;
+        _users = list;
+      }),
     );
   }
 
@@ -133,9 +113,14 @@ class _NewChatSheetState extends State<NewChatSheet> {
               onChanged: (val) => setState(() => _query = val),
               decoration: InputDecoration(
                 hintText: 'Search people by name or username...',
-                prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                ),
                 filled: true,
-                fillColor: AppColors.background,
+                fillColor: Theme.of(context).brightness == Brightness.dark
+                    ? AppTheme.darkTextingInputBg
+                    : AppTheme.textingInputBg,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -146,11 +131,32 @@ class _NewChatSheetState extends State<NewChatSheet> {
           ),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const ShimmerList()
+                : _loadError != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _loadError!,
+                            textAlign: TextAlign.center,
+                            style: AppTextStyle.bodySecondary,
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: _loadUsers,
+                            child: const Text('Try again'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
                 : filtered.isEmpty
                     ? Center(
                         child: Text(
-                          'No users found',
+                          'No contacts found',
                           style: AppTextStyle.bodySecondary,
                         ),
                       )
@@ -160,11 +166,12 @@ class _NewChatSheetState extends State<NewChatSheet> {
                             const Divider(height: 1, indent: 68),
                         itemBuilder: (context, index) {
                           final user = filtered[index];
+                          final cs = Theme.of(context).colorScheme;
+
                           return ListTile(
                             leading: CircleAvatar(
                               radius: 22,
-                              backgroundColor:
-                                  AppColors.primary.withValues(alpha: 0.15),
+                              backgroundColor: cs.onSurface.withValues(alpha: 0.10),
                               backgroundImage: user.profilePicture != null
                                   ? CachedNetworkImageProvider(
                                       user.profilePicture!,
@@ -175,8 +182,8 @@ class _NewChatSheetState extends State<NewChatSheet> {
                                       user.displayName.isNotEmpty
                                           ? user.displayName[0].toUpperCase()
                                           : '?',
-                                      style: const TextStyle(
-                                        color: AppColors.primary,
+                                      style: TextStyle(
+                                        color: cs.onSurface.withValues(alpha: 0.55),
                                         fontWeight: FontWeight.bold,
                                       ),
                                     )

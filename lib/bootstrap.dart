@@ -1,18 +1,28 @@
 import 'dart:developer';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AppBlocObserver extends BlocObserver {
-  const AppBlocObserver();
+class AppProviderObserver extends ProviderObserver {
+  const AppProviderObserver();
 
   @override
-  void onChange(BlocBase<dynamic> bloc, Change<dynamic> change) {
-    super.onChange(bloc, change);
-    log('onChange(${bloc.runtimeType}, $change)');
+  void didUpdateProvider(
+    ProviderBase<Object?> provider,
+    Object? previousValue,
+    Object? newValue,
+    ProviderContainer container,
+  ) {
+    super.didUpdateProvider(provider, previousValue, newValue, container);
+    log('didUpdateProvider(${provider.name ?? provider.runtimeType}, $newValue)');
   }
 
   @override
-  void onError(BlocBase<dynamic> bloc, Object error, StackTrace stackTrace) {
-    log('onError(${bloc.runtimeType}, $error, $stackTrace)');
-    super.onError(bloc, error, stackTrace);
+  void providerDidFail(
+    ProviderBase<Object?> provider,
+    Object error,
+    StackTrace stackTrace,
+    ProviderContainer container,
+  ) {
+    log('providerDidFail(${provider.name ?? provider.runtimeType}, $error, $stackTrace)');
+    super.providerDidFail(provider, error, stackTrace, container);
   }
 }

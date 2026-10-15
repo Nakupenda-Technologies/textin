@@ -1,16 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/env/env.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/text_style.dart';
-import '../cubit/home_cubit.dart';
-import '../cubit/home_state.dart';
+import '../../../shared/widgets/app_shimmer.dart';
+import '../notifier/home_notifier.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(homeNotifierProvider.notifier).loadProfile();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final state = ref.watch(homeNotifierProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(Env.appName),
@@ -37,10 +52,10 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: BlocBuilder<HomeCubit, HomeState>(
-        builder: (context, state) {
+      body: Builder(
+        builder: (context) {
           if (state is HomeLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const _HomeShimmer();
           }
           if (state is HomeError) {
             return Center(
@@ -114,6 +129,31 @@ class HomeScreen extends StatelessWidget {
           }
           return const SizedBox.shrink();
         },
+      ),
+    );
+  }
+}
+
+class _HomeShimmer extends StatelessWidget {
+  const _HomeShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppShimmer(
+      child: Padding(
+        padding: EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ShimmerBlock(width: 240, height: 28),
+            SizedBox(height: 12),
+            ShimmerBlock(width: 180, height: 14),
+            SizedBox(height: 8),
+            ShimmerBlock(width: 220, height: 14),
+            SizedBox(height: 24),
+            ShimmerBlock(height: 88, radius: 16),
+          ],
+        ),
       ),
     );
   }

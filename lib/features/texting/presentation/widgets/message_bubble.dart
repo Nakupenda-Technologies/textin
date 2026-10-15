@@ -1,19 +1,27 @@
+import 'dart:io';
+import 'dart:math';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
-import '../../../../core/theme/colors.dart';
-import '../../../../core/theme/text_style.dart';
+import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/widgets/app_shimmer.dart';
+import '../../models/chat_customization.dart';
 import '../../models/message.dart';
+import 'mood_palette.dart';
 
 class MessageBubble extends StatefulWidget {
   const MessageBubble({
     super.key,
     required this.message,
     this.onReply,
+    this.customization = const ChatCustomization(),
   });
 
   final Message message;
   final VoidCallback? onReply;
+  final ChatCustomization customization;
 
   @override
   State<MessageBubble> createState() => _MessageBubbleState();
@@ -23,6 +31,23 @@ class _MessageBubbleState extends State<MessageBubble> {
   AudioPlayer? _player;
   bool _isPlaying = false;
   Duration _position = Duration.zero;
+  double _swipeOffset = 0;
+
+  static const _swipeThreshold = 56.0;
+  static const _maxSwipe = 72.0;
+
+  void _onSwipeUpdate(DragUpdateDetails details) {
+    final next = (_swipeOffset + details.delta.dx).clamp(0.0, _maxSwipe);
+    if (_swipeOffset < _swipeThreshold && next >= _swipeThreshold) {
+      HapticFeedback.lightImpact();
+    }
+    setState(() => _swipeOffset = next);
+  }
+
+  void _onSwipeEnd(DragEndDetails _) {
+    if (_swipeOffset >= _swipeThreshold) widget.onReply?.call();
+    setState(() => _swipeOffset = 0);
+  }
 
   @override
   void dispose() {
@@ -31,16 +56,18 @@ class _MessageBubbleState extends State<MessageBubble> {
   }
 
   Future<void> _toggleVoicePlayback() async {
-    if (widget.message.mediaUrl == null || widget.message.mediaUrl!.isEmpty) {
-      return;
-    }
+    final url = widget.message.mediaUrl;
+    final localPath = widget.message.localMediaPath;
+    final hasUrl = url != null && url.isNotEmpty;
+    if (!hasUrl && localPath == null) return;
 
     if (_player == null) {
       _player = AudioPlayer();
       _player!.playerStateStream.listen((state) {
         if (mounted) {
           setState(() {
-            _isPlaying = state.playing &&
+            _isPlaying =
+                state.playing &&
                 state.processingState != ProcessingState.completed;
             if (state.processingState == ProcessingState.completed) {
               _position = Duration.zero;
@@ -53,7 +80,11 @@ class _MessageBubbleState extends State<MessageBubble> {
           setState(() => _position = pos);
         }
       });
-      await _player!.setUrl(widget.message.mediaUrl!);
+      if (hasUrl) {
+        await _player!.setUrl(url);
+      } else {
+        await _player!.setFilePath(localPath!);
+      }
     }
 
     if (_isPlaying) {
@@ -63,133 +94,207 @@ class _MessageBubbleState extends State<MessageBubble> {
     }
   }
 
+  double get _playbackProgress {
+    final total = widget.message.voiceDuration?.inMilliseconds ?? 0;
+    if (total <= 0) return 0;
+    return (_position.inMilliseconds / total).clamp(0.0, 1.0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMe = widget.message.isMe;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
 
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        decoration: BoxDecoration(
-          color: isMe ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(isMe ? 16 : 4),
-            bottomRight: Radius.circular(isMe ? 4 : 16),
-          ),
-          border: isMe ? null : Border.all(color: AppColors.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+    final palette = MoodPalette.of(widget.customization.mood);
+
+    final bubbleBg = isMe
+        ? palette.sentBg
+        : (isDark ? AppTheme.darkTextingReceivedBubble : palette.receivedBg);
+    final fg = isMe
+        ? palette.sentFg
+        : (isDark ? cs.onSurface : palette.receivedFg);
+    final border = isMe
+        ? palette.sentBorder
+        : (isDark ? AppTheme.darkPinkBorder : palette.receivedBorder);
+
+    final canReply = widget.onReply != null;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPress: widget.onReply,
+      onHorizontalDragUpdate: canReply ? _onSwipeUpdate : null,
+      onHorizontalDragEnd: canReply ? _onSwipeEnd : null,
+      child: Stack(
+        children: [
+          Positioned(
+            left: 16,
+            top: 0,
+            bottom: 0,
+            child: Opacity(
+              opacity: (_swipeOffset / _swipeThreshold).clamp(0.0, 1.0),
+              child: const Icon(
+                Icons.reply_rounded,
+                size: 22,
+                color: AppTheme.textingTimestamp,
+              ),
             ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Column(
-          crossAxisAlignment:
-              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            if (widget.message.type == MessageType.image &&
-                widget.message.mediaUrl != null)
-              _buildImageMessage(widget.message.mediaUrl!),
-            if (widget.message.type == MessageType.voice)
-              _buildVoiceMessage(isMe),
-            if (widget.message.content.isNotEmpty)
-              Text(
-                widget.message.content,
-                style: AppTextStyle.body.copyWith(
-                  color: isMe ? Colors.white : AppColors.textPrimary,
+          ),
+          AnimatedContainer(
+            duration: _swipeOffset == 0
+                ? const Duration(milliseconds: 180)
+                : Duration.zero,
+            curve: Curves.easeOut,
+            transform: Matrix4.translationValues(_swipeOffset, 0, 0),
+            child: Align(
+              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 6,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: isMe
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: bubbleBg,
+                        borderRadius: bubbleRadius(
+                          widget.customization.bubbleStyle,
+                          isMe: isMe,
+                        ),
+                        border: border == null
+                            ? null
+                            : Border.all(width: 0.5, color: border),
+                      ),
+                      padding: widget.message.type == MessageType.voice
+                          ? const EdgeInsets.fromLTRB(8, 8, 16, 8)
+                          : const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 7,
+                            ),
+                      child: Column(
+                        crossAxisAlignment: isMe
+                            ? CrossAxisAlignment.end
+                            : CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (widget.message.type == MessageType.image)
+                            _buildImageMessage(),
+                          if (widget.message.type == MessageType.voice)
+                            _buildVoiceMessage(
+                              fg,
+                              isMe ? bubbleBg : Colors.white,
+                            ),
+                          if (widget.message.type != MessageType.voice &&
+                              widget.message.content.isNotEmpty)
+                            Text(
+                              widget.message.content,
+                              style: TextStyle(
+                                fontSize: 15,
+                                height: 22 / 15,
+                                fontWeight: FontWeight.w600,
+                                color: fg,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.message.formattedTime,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.41,
+                            color: AppTheme.textingTimestamp,
+                          ),
+                        ),
+                        if (isMe) ...[
+                          const SizedBox(width: 4),
+                          _buildStatusIndicator(),
+                        ],
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  widget.message.formattedTime,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isMe
-                        ? Colors.white.withValues(alpha: 0.75)
-                        : AppColors.textSecondary,
-                  ),
-                ),
-                if (isMe) ...[
-                  const SizedBox(width: 4),
-                  _buildStatusIndicator(),
-                ],
-              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildImageMessage(String url) {
+  Widget _buildImageMessage() {
+    final url = widget.message.mediaUrl;
+    final localPath = widget.message.localMediaPath;
+    final brokenImage = Container(
+      height: 120,
+      color: Colors.black12,
+      child: const Icon(Icons.broken_image, color: Colors.grey),
+    );
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
+      margin: const EdgeInsets.symmetric(vertical: 6),
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
-      child: CachedNetworkImage(
-        imageUrl: url,
-        placeholder: (ctx, _) => Container(
-          height: 180,
-          color: Colors.black12,
-          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+      child: switch ((url, localPath)) {
+        (final String url, _) when url.isNotEmpty => CachedNetworkImage(
+          imageUrl: url,
+          placeholder: (ctx, _) => const AppShimmer(
+            child: ShimmerBlock(width: 220, height: 180, radius: 0),
+          ),
+          errorWidget: (ctx, _, _) => brokenImage,
         ),
-        errorWidget: (ctx, _, _) => Container(
-          height: 120,
-          color: Colors.black12,
-          child: const Icon(Icons.broken_image, color: Colors.grey),
+        (_, final String path) => Image.file(
+          File(path),
+          errorBuilder: (ctx, _, _) => brokenImage,
         ),
-      ),
+        _ => brokenImage,
+      },
     );
   }
 
-  Widget _buildVoiceMessage(bool isMe) {
-    final durationText = widget.message.formattedDuration;
+  Widget _buildVoiceMessage(Color fg, Color iconColor) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          icon: Icon(
-            _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
-            color: isMe ? Colors.white : AppColors.primary,
-            size: 32,
-          ),
-          onPressed: _toggleVoicePlayback,
-        ),
-        const SizedBox(width: 4),
-        Expanded(
-          child: LinearProgressIndicator(
-            value: widget.message.voiceDuration != null &&
-                    widget.message.voiceDuration!.inMilliseconds > 0
-                ? (_position.inMilliseconds /
-                        widget.message.voiceDuration!.inMilliseconds)
-                    .clamp(0.0, 1.0)
-                : 0.0,
-            backgroundColor: isMe
-                ? Colors.white.withValues(alpha: 0.3)
-                : AppColors.primary.withValues(alpha: 0.15),
-            valueColor: AlwaysStoppedAnimation<Color>(
-              isMe ? Colors.white : AppColors.primary,
+        GestureDetector(
+          onTap: _toggleVoicePlayback,
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
+            child: Icon(
+              _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+              size: 20,
+              color: iconColor,
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
+        _Waveform(
+          seed: widget.message.id.hashCode,
+          progress: _playbackProgress,
+          color: fg,
+        ),
+        const SizedBox(width: 12),
         Text(
-          durationText,
+          widget.message.formattedDuration,
           style: TextStyle(
             fontSize: 12,
-            color: isMe ? Colors.white : AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+            color: fg.withValues(alpha: 0.8),
           ),
         ),
       ],
@@ -199,25 +304,57 @@ class _MessageBubbleState extends State<MessageBubble> {
   Widget _buildStatusIndicator() {
     switch (widget.message.status) {
       case MessageStatus.pending:
-        return Icon(
+        return const Icon(
           Icons.access_time,
-          size: 13,
-          color: Colors.white.withValues(alpha: 0.7),
+          size: 12,
+          color: AppTheme.textingTimestamp,
         );
       case MessageStatus.failed:
-        return const Icon(
-          Icons.error_outline,
-          size: 13,
-          color: Colors.redAccent,
-        );
+        return const Icon(Icons.error_outline, size: 12, color: AppTheme.red);
       case MessageStatus.sent:
         return Icon(
           widget.message.isRead ? Icons.done_all : Icons.done,
           size: 14,
-          color: widget.message.isRead
-              ? Colors.lightBlueAccent
-              : Colors.white.withValues(alpha: 0.75),
+          color: AppTheme.textingTimestamp,
         );
     }
+  }
+}
+
+class _Waveform extends StatelessWidget {
+  const _Waveform({
+    required this.seed,
+    required this.progress,
+    required this.color,
+  });
+
+  static const _barCount = 28;
+
+  final int seed;
+  final double progress;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final random = Random(seed);
+    final played = (progress * _barCount).round();
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < _barCount; i++)
+          Container(
+            width: 2,
+            height: 4 + random.nextDouble() * 20,
+            margin: const EdgeInsets.symmetric(horizontal: 1),
+            decoration: BoxDecoration(
+              color: progress > 0 && i >= played
+                  ? color.withValues(alpha: 0.45)
+                  : color,
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+      ],
+    );
   }
 }

@@ -11,7 +11,7 @@ void main() {
       expect(Env.isProd, isFalse);
       expect(Env.appName, 'Textin Dev');
       expect(Env.baseUrl, contains('nakupendaapp.com/dev/api/v1'));
-      expect(Env.messagingBaseUrl, contains('nakupendaapp.com/dev/api'));
+      expect(Env.messagingBaseUrl, contains('nakupendaapp.com/dev/api/v1'));
       expect(Env.websocketBaseUrl, 'wss://nakupendaapp.com');
     });
 
@@ -23,7 +23,7 @@ void main() {
       expect(Env.isProd, isFalse);
       expect(Env.appName, 'Textin Staging');
       expect(Env.baseUrl, contains('nakupendaapp.com/staging/api/v1'));
-      expect(Env.messagingBaseUrl, contains('nakupendaapp.com/staging/api'));
+      expect(Env.messagingBaseUrl, contains('nakupendaapp.com/staging/api/v1'));
     });
 
     test('Prod flavor sets correct properties', () {
@@ -34,7 +34,7 @@ void main() {
       expect(Env.isProd, isTrue);
       expect(Env.appName, 'Textin');
       expect(Env.baseUrl, 'https://nakupendaapp.com/api/v1');
-      expect(Env.messagingBaseUrl, 'https://nakupendaapp.com/api');
+      expect(Env.messagingBaseUrl, 'https://nakupendaapp.com/api/v1');
     });
   });
 }

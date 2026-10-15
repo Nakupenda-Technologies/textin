@@ -64,3 +64,6 @@ app.*.map.json
 **/ios/Pods/
 **/ios/Podfile.lock
 
+.agents/
+AGENTS.md
+

@@ -1,4 +1,5 @@
 import '../../../config/constants/endpoints.dart';
+import '../../../core/errors/failure.dart';
 import '../../../core/network/client.dart';
 import '../models/api/chat_item.dart';
 import '../models/api/chat_message_api.dart';
@@ -9,6 +10,7 @@ abstract class TextingRemoteDataSource {
   Future<List<ChatItem>> fetchRegularChats(int filterIndex);
   Future<List<ChatItem>> fetchSecretChats();
   Future<List<ChatMessageApi>> fetchMessages(String chatId);
+  Future<String> uploadMedia(String filePath, String contentType);
   Future<ChatMessageApi> sendTextMessage(
     String chatId,
     String text, {
@@ -28,6 +30,10 @@ abstract class TextingRemoteDataSource {
   Future<void> markChatRead(String chatId);
   Future<void> togglePin(String chatId, bool pinned);
   Future<void> toggleSecretInbox(String chatId, bool inSecretInbox);
+  Future<void> updateCustomization(
+    String chatId,
+    Map<String, dynamic> customization,
+  );
   Future<ChatStreak?> fetchStreak(String chatId);
   Future<ChatItem> startOrGetChat({
     required String otherUserId,
@@ -81,6 +87,22 @@ class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
   }
 
   @override
+  Future<String> uploadMedia(String filePath, String contentType) async {
+    final dynamic response = await client.upload(
+      Endpoints.mediaUpload,
+      field: 'file',
+      filePath: filePath,
+      contentType: contentType,
+    );
+    final data = response is Map<String, dynamic>
+        ? response['data'] ?? response
+        : null;
+    final url = data is Map<String, dynamic> ? data['url'] : null;
+    if (url is String && url.isNotEmpty) return url;
+    throw const ServerFailure('The upload did not return a media URL');
+  }
+
+  @override
   Future<ChatMessageApi> sendTextMessage(
     String chatId,
     String text, {
@@ -94,7 +116,9 @@ class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
         'replyToId': ?replyToId,
       },
     );
-    return ChatMessageApi.fromJson(response as Map<String, dynamic>);
+    return ChatMessageApi.fromJson(
+      ChatMessageApi.unwrap(response as Map<String, dynamic>),
+    );
   }
 
   @override
@@ -113,7 +137,9 @@ class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
         'replyToId': ?replyToId,
       },
     );
-    return ChatMessageApi.fromJson(response as Map<String, dynamic>);
+    return ChatMessageApi.fromJson(
+      ChatMessageApi.unwrap(response as Map<String, dynamic>),
+    );
   }
 
   @override
@@ -130,7 +156,9 @@ class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
         'replyToId': ?replyToId,
       },
     );
-    return ChatMessageApi.fromJson(response as Map<String, dynamic>);
+    return ChatMessageApi.fromJson(
+      ChatMessageApi.unwrap(response as Map<String, dynamic>),
+    );
   }
 
   @override
@@ -148,6 +176,17 @@ class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
     await client.patch(
       Endpoints.chatSecretInbox(chatId),
       body: {'inSecretInbox': inSecretInbox},
+    );
+  }
+
+  @override
+  Future<void> updateCustomization(
+    String chatId,
+    Map<String, dynamic> customization,
+  ) async {
+    await client.patch(
+      Endpoints.chatCustomization(chatId),
+      body: customization,
     );
   }
 

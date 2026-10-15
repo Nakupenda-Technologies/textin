@@ -32,14 +32,14 @@ class ChatItem extends Equatable {
       isPinned: json['isPinned'] as bool? ?? json['pinned'] as bool? ?? false,
       inSecretInbox: json['inSecretInbox'] as bool? ?? false,
       boundaryTriggered: json['boundaryTriggered'] as bool? ?? false,
-      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
+      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '')?.toLocal() ??
           DateTime.now(),
       lastMessage: json['lastMessage'] != null
           ? ChatMessageApi.fromJson(json['lastMessage'] as Map<String, dynamic>)
           : null,
       customization: json['customization'] as Map<String, dynamic>?,
       lastSeen: json['lastSeen'] != null
-          ? DateTime.tryParse(json['lastSeen'].toString())
+          ? DateTime.tryParse(json['lastSeen'].toString())?.toLocal()
           : null,
     );
   }

@@ -1,5 +1,4 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'shared_pref_keys.dart';
 
 class SharedPreferencesStore {
   SharedPreferencesStore._();
@@ -42,10 +41,4 @@ class SharedPreferencesStore {
   static Future<bool> clear() async {
     return _prefs != null ? instance.clear() : false;
   }
-
-  // Convenience helpers
-  static String? getAuthToken() => getString(SharedPrefKeys.token);
-  static Future<bool> setAuthToken(String token) =>
-      setString(SharedPrefKeys.token, token);
-  static Future<bool> removeAuthToken() => remove(SharedPrefKeys.token);
 }
