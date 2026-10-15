@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/env/env.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/text_style.dart';
+import '../../../shared/widgets/app_shimmer.dart';
 import '../notifier/home_notifier.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -54,7 +55,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: Builder(
         builder: (context) {
           if (state is HomeLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const _HomeShimmer();
           }
           if (state is HomeError) {
             return Center(
@@ -128,6 +129,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           }
           return const SizedBox.shrink();
         },
+      ),
+    );
+  }
+}
+
+class _HomeShimmer extends StatelessWidget {
+  const _HomeShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppShimmer(
+      child: Padding(
+        padding: EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ShimmerBlock(width: 240, height: 28),
+            SizedBox(height: 12),
+            ShimmerBlock(width: 180, height: 14),
+            SizedBox(height: 8),
+            ShimmerBlock(width: 220, height: 14),
+            SizedBox(height: 24),
+            ShimmerBlock(height: 88, radius: 16),
+          ],
+        ),
       ),
     );
   }
