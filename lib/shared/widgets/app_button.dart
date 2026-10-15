@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
 
 import '../theme/app_theme.dart';
 
@@ -56,17 +55,23 @@ class AppButton extends StatelessWidget {
             ),
     );
 
-    final labelText = Text(label, maxLines: 1, overflow: TextOverflow.ellipsis);
     final child = AnimatedSwitcher(
       duration: const Duration(milliseconds: 180),
       child: isLoading
-          ? Shimmer.fromColors(
+          ? SizedBox.square(
               key: const ValueKey('loading'),
-              baseColor: enabledForeground.withValues(alpha: 0.45),
-              highlightColor: enabledForeground,
-              child: labelText,
+              dimension: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: enabledForeground,
+              ),
             )
-          : KeyedSubtree(key: const ValueKey('label'), child: labelText),
+          : Text(
+              label,
+              key: const ValueKey('label'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
     );
 
     return Semantics(
