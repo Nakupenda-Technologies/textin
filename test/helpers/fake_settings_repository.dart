@@ -15,6 +15,13 @@ class FakeSettingsRepository extends SettingsRepository {
 
   final emailChangeRequests = <String>[];
   final passwordChanges = <(String, String)>[];
+  final deletePasswords = <String?>[];
+
+  @override
+  Future<Either<Failure, Unit>> deleteAccount(String? password) async {
+    deletePasswords.add(password);
+    return const Left(ServerFailure('Invalid password'));
+  }
 
   @override
   Future<Either<Failure, Unit>> changePassword(

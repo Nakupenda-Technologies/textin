@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../../core/di/locator.dart';
+import '../../../../core/errors/failure.dart';
 import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/app_button.dart';
@@ -12,7 +14,9 @@ import '../../../settings/notifier/settings_notifier.dart';
 import '../../../settings/presentation/pages/change_email_screen.dart';
 import '../../../settings/presentation/pages/change_password_screen.dart';
 import '../../../settings/presentation/pages/edit_profile_screen.dart';
+import '../../../settings/presentation/widgets/account_dialogs.dart';
 import '../../../settings/presentation/widgets/settings_tiles.dart';
+import '../../../settings/repository/settings_repository.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -33,6 +37,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _signOut() async {
     setState(() => _isSigningOut = true);
     await signOutToLogin(ref);
+  }
+
+  Future<void> _deactivate() async {
+    if (!await confirmDeactivation(context)) return;
+    final result = await locator<SettingsRepository>().deactivateAccount();
+    result.fold(
+      _showFailure,
+      (_) => signOutToLogin(
+        ref,
+        message: 'Account deactivated. Sign in again to reactivate it.',
+      ),
+    );
+  }
+
+  Future<void> _delete() async {
+    final password = await askPasswordToDelete(context);
+    if (password == null) return;
+    final result = await locator<SettingsRepository>().deleteAccount(password);
+    result.fold(
+      _showFailure,
+      (_) => signOutToLogin(ref, message: 'Your account has been deleted.'),
+    );
+  }
+
+  void _showFailure(Failure failure) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(failure.message)));
   }
 
   void _open(Widget screen) => Navigator.of(
@@ -224,6 +257,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               selected: settings.language,
               apply: (code) => settings.copyWith(language: code),
             ),
+          ),
+        ],
+      ),
+      SettingsSection(
+        title: 'Account actions',
+        children: [
+          SettingsTile(
+            icon: PhosphorIconsRegular.pauseCircle,
+            title: 'Deactivate account',
+            destructive: true,
+            onTap: _deactivate,
+          ),
+          SettingsTile(
+            icon: PhosphorIconsRegular.trash,
+            title: 'Delete account',
+            destructive: true,
+            onTap: _delete,
           ),
         ],
       ),
