@@ -13,6 +13,22 @@ class TextingRepositoryImpl implements TextingRepository {
 
   final TextingRemoteDataSource remoteDataSource;
 
+  static const _contentTypes = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'webp': 'image/webp',
+    'gif': 'image/gif',
+    'm4a': 'audio/mp4',
+    'mp3': 'audio/mpeg',
+    'aac': 'audio/aac',
+    'wav': 'audio/wav',
+    'ogg': 'audio/ogg',
+  };
+
+  String _contentType(String filePath, {required String fallback}) =>
+      _contentTypes[filePath.split('.').last.toLowerCase()] ?? fallback;
+
   @override
   Future<Either<Failure, List<Conversation>>> fetchRegularChats(
     int filterIndex, {
@@ -95,7 +111,7 @@ class TextingRepositoryImpl implements TextingRepository {
     try {
       final mediaUrl = await remoteDataSource.uploadMedia(
         filePath,
-        'audio/mp4',
+        _contentType(filePath, fallback: 'audio/mp4'),
       );
       final msgApi = await remoteDataSource.sendVoiceMessage(
         chatId,
@@ -119,12 +135,9 @@ class TextingRepositoryImpl implements TextingRepository {
     required String myUserId,
   }) async {
     try {
-      final contentType = filePath.toLowerCase().endsWith('.png')
-          ? 'image/png'
-          : 'image/jpeg';
       final mediaUrl = await remoteDataSource.uploadMedia(
         filePath,
-        contentType,
+        _contentType(filePath, fallback: 'image/jpeg'),
       );
       final msgApi = await remoteDataSource.sendImageMessage(
         chatId,
