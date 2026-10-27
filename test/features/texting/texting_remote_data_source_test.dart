@@ -30,4 +30,15 @@ void main() {
 
     expect(users.map((u) => u.username), ['ada']);
   });
+
+  test('starting a chat reads a response without the other user', () async {
+    final dataSource = _dataSource({
+      'id': 'chat_1',
+      'createdAt': '2026-10-27T10:00:00.000Z',
+    });
+
+    final chat = await dataSource.startOrGetChat(otherUserId: 'u2');
+
+    expect(chat.id, 'chat_1');
+  });
 }

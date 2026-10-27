@@ -19,8 +19,9 @@ class ChatItem extends Equatable {
   });
 
   factory ChatItem.fromJson(Map<String, dynamic> json) {
-    final otherUserData = (json['otherUser'] ?? json['otherParticipant'] ?? {})
-        as Map<String, dynamic>;
+    final otherUserData =
+        (json['otherUser'] ?? json['otherParticipant'] ?? <String, dynamic>{})
+            as Map<String, dynamic>;
     final participant = ChatParticipant.fromJson(otherUserData);
 
     return ChatItem(
