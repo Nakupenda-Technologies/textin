@@ -4,6 +4,11 @@ import '../models/live_whisper.dart';
 
 abstract class WhispersRemoteDataSource {
   Future<List<LiveWhisper>> fetchLiveWhispers();
+  Future<void> createWhisper({
+    required String title,
+    required bool isPrivate,
+    DateTime? scheduledAt,
+  });
 }
 
 class WhispersRemoteDataSourceImpl implements WhispersRemoteDataSource {
@@ -18,5 +23,21 @@ class WhispersRemoteDataSourceImpl implements WhispersRemoteDataSource {
       queryParameters: {'limit': '50'},
     );
     return LiveWhisper.listFromResponse(response);
+  }
+
+  @override
+  Future<void> createWhisper({
+    required String title,
+    required bool isPrivate,
+    DateTime? scheduledAt,
+  }) async {
+    await client.post(
+      Endpoints.whispers,
+      body: {
+        'title': title,
+        'visibility': isPrivate ? 'private' : 'public',
+        'scheduledAt': ?scheduledAt?.toUtc().toIso8601String(),
+      },
+    );
   }
 }

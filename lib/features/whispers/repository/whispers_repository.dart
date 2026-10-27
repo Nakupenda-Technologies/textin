@@ -5,6 +5,11 @@ import '../models/live_whisper.dart';
 
 abstract class WhispersRepository {
   Future<Either<Failure, List<LiveWhisper>>> fetchLiveWhispers();
+  Future<Either<Failure, void>> createWhisper({
+    required String title,
+    required bool isPrivate,
+    DateTime? scheduledAt,
+  });
 }
 
 class WhispersRepositoryImpl implements WhispersRepository {
@@ -13,9 +18,25 @@ class WhispersRepositoryImpl implements WhispersRepository {
   final WhispersRemoteDataSource remoteDataSource;
 
   @override
-  Future<Either<Failure, List<LiveWhisper>>> fetchLiveWhispers() async {
+  Future<Either<Failure, List<LiveWhisper>>> fetchLiveWhispers() =>
+      _guard(remoteDataSource.fetchLiveWhispers);
+
+  @override
+  Future<Either<Failure, void>> createWhisper({
+    required String title,
+    required bool isPrivate,
+    DateTime? scheduledAt,
+  }) => _guard(
+    () => remoteDataSource.createWhisper(
+      title: title,
+      isPrivate: isPrivate,
+      scheduledAt: scheduledAt,
+    ),
+  );
+
+  Future<Either<Failure, T>> _guard<T>(Future<T> Function() call) async {
     try {
-      return Right(await remoteDataSource.fetchLiveWhispers());
+      return Right(await call());
     } on Failure catch (e) {
       return Left(e);
     } catch (e) {

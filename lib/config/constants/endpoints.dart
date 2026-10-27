@@ -53,6 +53,7 @@ class Endpoints {
   static const String profilePictureUpload = '/media/upload/profiles';
 
   // Whispers
+  static const String whispers = '/whispers';
   static const String liveWhispers = '/whispers/live';
 
   // Media upload
