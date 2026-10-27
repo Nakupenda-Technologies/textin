@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:textin/core/errors/failure.dart';
 import 'package:textin/features/whispers/models/whisper_media_session.dart';
+import 'package:textin/features/whispers/models/whisper_room_snapshot.dart';
 import 'package:textin/features/whispers/notifier/whisper_room_notifier.dart';
 import 'package:textin/features/whispers/presentation/pages/whisper_room_screen.dart';
 import 'package:textin/features/whispers/repository/whispers_repository.dart';
@@ -64,6 +65,11 @@ class _FakeRepository implements WhispersRepository {
       canPublishAudio: true,
     ),
   );
+
+  @override
+  Future<Either<Failure, WhisperRoomSnapshot>> fetchRoomState(
+    String id,
+  ) async => const Right(WhisperRoomSnapshot());
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

@@ -5,6 +5,7 @@ import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:textin/core/errors/failure.dart';
 import 'package:textin/features/whispers/models/whisper_media_session.dart';
+import 'package:textin/features/whispers/models/whisper_room_snapshot.dart';
 import 'package:textin/features/whispers/notifier/whisper_room_notifier.dart';
 import 'package:textin/features/whispers/repository/whispers_repository.dart';
 import 'package:textin/features/whispers/services/whisper_audio_engine.dart';
@@ -79,6 +80,17 @@ class _FakeRepository implements WhispersRepository {
   }
 
   @override
+  Future<Either<Failure, WhisperRoomSnapshot>> fetchRoomState(String id) async {
+    calls.add('roster');
+    return const Right(
+      WhisperRoomSnapshot(
+        listenerCount: 1,
+        listeners: [WhisperMember(userId: 'u2', name: 'Ben')],
+      ),
+    );
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -117,7 +129,7 @@ void main() {
 
     await notifier.enter();
 
-    expect(repository.calls, ['session']);
+    expect(repository.calls, ['session', 'roster']);
     expect(audio.joins, [true]);
     expect(notifier.state.status, WhisperRoomStatus.connected);
     expect(notifier.state.canSpeak, isTrue);
@@ -131,7 +143,7 @@ void main() {
 
     await notifier.enter();
 
-    expect(repository.calls, ['join', 'session']);
+    expect(repository.calls, ['join', 'session', 'roster']);
     expect(audio.joins, [false]);
     expect(notifier.state.canSpeak, isFalse);
   });
@@ -242,5 +254,23 @@ void main() {
     expect(repository.calls, isNot(contains('leave')));
     expect(repository.calls, isNot(contains('end')));
     expect(audio.leaves, 1);
+  });
+
+  test('the roster loads on connect and refreshes while in the room', () {
+    fakeAsync((async) {
+      final notifier = _notifier(repository, audio);
+      notifier.enter();
+      async.flushMicrotasks();
+
+      expect(notifier.state.roster.listenerCount, 1);
+      expect(notifier.state.roster.listeners.single.name, 'Ben');
+
+      async.elapse(const Duration(seconds: 10));
+      expect(repository.calls.where((c) => c == 'roster'), hasLength(2));
+
+      notifier.dispose();
+      async.elapse(const Duration(seconds: 30));
+      expect(repository.calls.where((c) => c == 'roster'), hasLength(2));
+    });
   });
 }

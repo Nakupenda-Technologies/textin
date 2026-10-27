@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/errors/error_message.dart';
 import '../../../core/errors/failure.dart';
+import '../models/whisper_room_snapshot.dart';
 import '../repository/whispers_repository.dart';
 import '../services/whisper_audio_engine.dart';
 
@@ -17,15 +18,23 @@ class WhisperRoomArgs extends Equatable {
     required this.title,
     required this.hostName,
     required this.isHost,
+    this.hostAvatarUrl,
   });
 
   final String whisperId;
   final String title;
   final String hostName;
   final bool isHost;
+  final String? hostAvatarUrl;
 
   @override
-  List<Object?> get props => [whisperId, title, hostName, isHost];
+  List<Object?> get props => [
+    whisperId,
+    title,
+    hostName,
+    isHost,
+    hostAvatarUrl,
+  ];
 }
 
 class WhisperRoomState extends Equatable {
@@ -36,6 +45,7 @@ class WhisperRoomState extends Equatable {
     this.micBlocked = false,
     this.isEnding = false,
     this.errorMessage,
+    this.roster = const WhisperRoomSnapshot(),
   });
 
   final WhisperRoomStatus status;
@@ -44,6 +54,7 @@ class WhisperRoomState extends Equatable {
   final bool micBlocked;
   final bool isEnding;
   final String? errorMessage;
+  final WhisperRoomSnapshot roster;
 
   WhisperRoomState copyWith({
     WhisperRoomStatus? status,
@@ -52,6 +63,7 @@ class WhisperRoomState extends Equatable {
     bool? micBlocked,
     bool? isEnding,
     String? errorMessage,
+    WhisperRoomSnapshot? roster,
   }) => WhisperRoomState(
     status: status ?? this.status,
     canSpeak: canSpeak ?? this.canSpeak,
@@ -59,6 +71,7 @@ class WhisperRoomState extends Equatable {
     micBlocked: micBlocked ?? this.micBlocked,
     isEnding: isEnding ?? this.isEnding,
     errorMessage: errorMessage,
+    roster: roster ?? this.roster,
   );
 
   @override
@@ -69,6 +82,7 @@ class WhisperRoomState extends Equatable {
     micBlocked,
     isEnding,
     errorMessage,
+    roster,
   ];
 }
 
@@ -76,8 +90,18 @@ final whisperAudioEngineProvider = Provider<WhisperAudioEngine>(
   (_) => TwilioWhisperAudioEngine(),
 );
 
-final whisperRoomNotifierProvider = StateNotifierProvider.autoDispose
-    .family<WhisperRoomNotifier, WhisperRoomState, WhisperRoomArgs>(
+// The room the user is in. It outlives the room sheet so audio keeps playing
+// behind the mini player; leaving or ending clears it.
+final currentWhisperRoomProvider = StateProvider<WhisperRoomArgs?>((_) => null);
+
+final whisperRoomSheetOpenProvider = StateProvider<bool>((_) => false);
+
+final whisperRoomNotifierProvider =
+    StateNotifierProvider.family<
+      WhisperRoomNotifier,
+      WhisperRoomState,
+      WhisperRoomArgs
+    >(
       (ref, args) => WhisperRoomNotifier(
         args: args,
         repository: locator<WhispersRepository>(),
@@ -99,12 +123,14 @@ class WhisperRoomNotifier extends StateNotifier<WhisperRoomState> {
   final WhisperAudioEngine audio;
 
   static const _backoff = [1, 2, 4, 8, 16, 30];
+  static const _rosterRefresh = Duration(seconds: 10);
 
   late final StreamSubscription<WhisperAudioEvent> _audioEvents;
   Future<bool>? _connecting;
   int _generation = 0;
   bool _reconnecting = false;
   bool _finalFailure = false;
+  Timer? _rosterTimer;
 
   String get _id => args.whisperId;
 
@@ -149,6 +175,7 @@ class WhisperRoomNotifier extends StateNotifier<WhisperRoomState> {
       },
       (_) {
         _generation++;
+        _rosterTimer?.cancel();
         audio.leave();
         state = state.copyWith(
           status: WhisperRoomStatus.ended,
@@ -188,7 +215,21 @@ class WhisperRoomNotifier extends StateNotifier<WhisperRoomState> {
       isMuted: !publish,
       micBlocked: session.canPublishAudio && !publish,
     );
+    _rosterTimer ??= Timer.periodic(_rosterRefresh, (_) => _refreshRoster());
+    _refreshRoster();
     return true;
+  }
+
+  Future<void> _refreshRoster() async {
+    final result = await repository.fetchRoomState(_id);
+    if (!mounted) return;
+    result.fold(
+      (_) {},
+      (roster) => state = state.copyWith(
+        roster: roster,
+        errorMessage: state.errorMessage,
+      ),
+    );
   }
 
   // A 400 from join or the audio session means the whisper is no longer live.
@@ -205,6 +246,7 @@ class WhisperRoomNotifier extends StateNotifier<WhisperRoomState> {
 
   void _fail(Failure? failure) {
     _finalFailure = _isFinal(failure);
+    if (_isEnded(failure)) _rosterTimer?.cancel();
     state = state.copyWith(
       status: _isEnded(failure)
           ? WhisperRoomStatus.ended
@@ -253,6 +295,7 @@ class WhisperRoomNotifier extends StateNotifier<WhisperRoomState> {
   @override
   void dispose() {
     _generation++;
+    _rosterTimer?.cancel();
     _audioEvents.cancel();
     audio.leave();
     if (!args.isHost && state.status != WhisperRoomStatus.ended) {

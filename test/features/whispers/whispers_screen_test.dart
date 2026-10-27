@@ -8,6 +8,7 @@ import 'package:textin/features/auth/notifier/session_notifier.dart';
 import 'package:textin/features/whispers/models/live_whisper.dart';
 import 'package:textin/features/whispers/models/my_whisper.dart';
 import 'package:textin/features/whispers/models/whisper_media_session.dart';
+import 'package:textin/features/whispers/models/whisper_room_snapshot.dart';
 import 'package:textin/features/whispers/notifier/my_whispers_notifier.dart';
 import 'package:textin/features/whispers/notifier/whisper_room_notifier.dart';
 import 'package:textin/features/whispers/notifier/whispers_notifier.dart';
@@ -71,6 +72,11 @@ class _FakeWhispersRepository implements WhispersRepository {
   @override
   Future<Either<Failure, List<MyWhisper>>> fetchMyWhispers() async =>
       Right(mine);
+
+  @override
+  Future<Either<Failure, WhisperRoomSnapshot>> fetchRoomState(
+    String id,
+  ) async => const Right(WhisperRoomSnapshot());
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
