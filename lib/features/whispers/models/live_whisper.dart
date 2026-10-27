@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 class LiveWhisper extends Equatable {
   const LiveWhisper({
     required this.id,
+    this.hostId = '',
     required this.title,
     required this.hostDisplayName,
     this.hostProfilePicture,
@@ -13,6 +14,7 @@ class LiveWhisper extends Equatable {
 
   factory LiveWhisper.fromJson(Map<String, dynamic> json) => LiveWhisper(
     id: json['id'] as String? ?? '',
+    hostId: json['hostId'] as String? ?? '',
     title: json['title'] as String? ?? '',
     hostDisplayName: json['hostDisplayName'] as String? ?? '',
     hostProfilePicture: json['hostProfilePicture'] as String?,
@@ -33,6 +35,7 @@ class LiveWhisper extends Equatable {
   }
 
   final String id;
+  final String hostId;
   final String title;
   final String hostDisplayName;
   final String? hostProfilePicture;
@@ -43,6 +46,7 @@ class LiveWhisper extends Equatable {
   @override
   List<Object?> get props => [
     id,
+    hostId,
     title,
     hostDisplayName,
     hostProfilePicture,

@@ -4,11 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/app_shimmer.dart';
+import '../../../../shared/widgets/app_toast.dart';
+import '../../../auth/notifier/session_notifier.dart';
 import '../../models/live_whisper.dart';
 import '../../notifier/my_whispers_notifier.dart';
+import '../../notifier/whisper_room_notifier.dart';
 import '../../notifier/whispers_notifier.dart';
 import '../widgets/my_whispers_list.dart';
 import 'create_whisper_screen.dart';
+import 'whisper_room_screen.dart';
 
 class WhispersScreen extends ConsumerStatefulWidget {
   const WhispersScreen({super.key});
@@ -31,6 +35,32 @@ class _WhispersScreenState extends ConsumerState<WhispersScreen> {
       MaterialPageRoute(builder: (_) => const CreateWhisperScreen()),
     );
     if (created == true && mounted) setState(() => _showMine = true);
+  }
+
+  Future<void> _openLive(LiveWhisper whisper) async {
+    final isHost = whisper.hostId == ref.read(currentUserProvider)?.id;
+    // The backend charges the wallet on join, and TEXTin has no payment
+    // confirmation yet, so paid rooms stay closed rather than charge silently.
+    if (whisper.chargeListeners && !isHost) {
+      AppToast.show("Paid whispers can't be joined from TEXTin yet");
+      return;
+    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => WhisperRoomScreen(
+          args: WhisperRoomArgs(
+            whisperId: whisper.id,
+            title: whisper.title,
+            hostName: whisper.hostDisplayName,
+            isHost: isHost,
+          ),
+        ),
+      ),
+    );
+    if (mounted) {
+      ref.read(whispersNotifierProvider.notifier).loadLiveWhispers();
+    }
   }
 
   @override
@@ -141,7 +171,10 @@ class _WhispersScreenState extends ConsumerState<WhispersScreen> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
       itemCount: state.whispers.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
-      itemBuilder: (_, index) => _WhisperCard(whisper: state.whispers[index]),
+      itemBuilder: (_, index) {
+        final whisper = state.whispers[index];
+        return _WhisperCard(whisper: whisper, onTap: () => _openLive(whisper));
+      },
     );
   }
 }
@@ -193,9 +226,10 @@ class _TabPill extends StatelessWidget {
 }
 
 class _WhisperCard extends StatelessWidget {
-  const _WhisperCard({required this.whisper});
+  const _WhisperCard({required this.whisper, required this.onTap});
 
   final LiveWhisper whisper;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -206,122 +240,125 @@ class _WhisperCard extends StatelessWidget {
         ? whisper.hostDisplayName[0].toUpperCase()
         : '?';
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkSurface : AppTheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppTheme.darkBorder : AppTheme.border,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.darkSurface : AppTheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? AppTheme.darkBorder : AppTheme.border,
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: cs.onSurface.withValues(alpha: 0.10),
-            backgroundImage: picture != null
-                ? CachedNetworkImageProvider(picture)
-                : null,
-            child: picture == null
-                ? Text(
-                    initial,
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 22,
+              backgroundColor: cs.onSurface.withValues(alpha: 0.10),
+              backgroundImage: picture != null
+                  ? CachedNetworkImageProvider(picture)
+                  : null,
+              child: picture == null
+                  ? Text(
+                      initial,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    whisper.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: cs.onSurface,
                     ),
-                  )
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  whisper.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: cs.onSurface,
                   ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        whisper.hostDisplayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyle.bodySecondary.copyWith(
-                          fontSize: 13,
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          whisper.hostDisplayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyle.bodySecondary.copyWith(
+                            fontSize: 13,
+                          ),
                         ),
                       ),
-                    ),
-                    if (whisper.hostIsVerified) ...[
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.verified_rounded,
-                        size: 14,
-                        color: AppTheme.textingSendBtn,
-                      ),
+                      if (whisper.hostIsVerified) ...[
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.verified_rounded,
+                          size: 14,
+                          color: AppTheme.textingSendBtn,
+                        ),
+                      ],
                     ],
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.headphones_rounded,
-                      size: 14,
-                      color: AppTheme.textingTimestamp,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${whisper.listenerCount} listening',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.headphones_rounded,
+                        size: 14,
                         color: AppTheme.textingTimestamp,
                       ),
-                    ),
-                    if (whisper.chargeListeners) ...[
-                      const SizedBox(width: 8),
-                      const Text(
-                        '• Paid entry',
-                        style: TextStyle(
+                      const SizedBox(width: 4),
+                      Text(
+                        '${whisper.listenerCount} listening',
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: AppTheme.textingTimestamp,
                         ),
                       ),
+                      if (whisper.chargeListeners) ...[
+                        const SizedBox(width: 8),
+                        const Text(
+                          '• Paid entry',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.textingTimestamp,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: AppTheme.red,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              'LIVE',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                letterSpacing: 0.5,
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppTheme.red,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'LIVE',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
