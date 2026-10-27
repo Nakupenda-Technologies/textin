@@ -167,7 +167,37 @@ class MockTextingRepository implements TextingRepository {
   }
 }
 
+class _SecretChatRepository extends MockTextingRepository {
+  @override
+  Future<Either<Failure, List<Conversation>>> fetchSecretChats({
+    required String myUserId,
+  }) async {
+    return const Right([
+      Conversation(id: 'secret_1', name: 'Godwin', inSecretInbox: true),
+    ]);
+  }
+}
+
 void main() {
+  test('secret chats stay reachable after a fresh load', () async {
+    SharedPreferences.setMockInitialValues({});
+    await LocalStorageService.init();
+    final notifier = InboxNotifier(
+      repository: _SecretChatRepository(),
+      socketService: TextingSocketService(WebSocketService()),
+      myUserId: 'me',
+    );
+    addTearDown(notifier.dispose);
+
+    await notifier.loadConversations();
+
+    expect(notifier.state.secretConversationsCount, 1);
+    expect(
+      notifier.state.displayedConversations.map((c) => c.id),
+      isNot(contains('secret_1')),
+    );
+  });
+
   group('InboxNotifier tests', () {
     late InboxNotifier notifier;
     late MockTextingRepository repository;
