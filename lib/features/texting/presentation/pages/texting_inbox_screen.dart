@@ -75,7 +75,13 @@ class _TextingInboxScreenState extends ConsumerState<TextingInboxScreen> {
             (conversation) {
               navigator.push(
                 MaterialPageRoute(
-                  builder: (_) => TextingChatScreen(conversation: conversation),
+                  builder: (_) => TextingChatScreen(
+                    conversation: conversation.copyWith(
+                      name: user.displayName,
+                      otherUserId: user.id,
+                      avatarUrl: user.profilePicture,
+                    ),
+                  ),
                 ),
               );
             },
