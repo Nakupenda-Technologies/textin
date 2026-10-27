@@ -9,21 +9,23 @@ import 'package:textin/features/whispers/data_source/whispers_remote_data_source
 void main() {
   late List<http.Request> requests;
   late WhispersRemoteDataSourceImpl dataSource;
+  late http.Response Function(http.Request request) respond;
 
   setUp(() {
     requests = [];
+    respond = (_) => http.Response(
+      jsonEncode({
+        'success': true,
+        'data': {'id': 'w1', 'createdAt': '2026-10-27T10:00:00.000Z'},
+      }),
+      201,
+    );
     dataSource = WhispersRemoteDataSourceImpl(
       BaseApiClients(
         baseUrl: 'https://api.test',
         client: MockClient((request) async {
           requests.add(request);
-          return http.Response(
-            jsonEncode({
-              'success': true,
-              'data': {'id': 'w1', 'createdAt': '2026-10-27T10:00:00.000Z'},
-            }),
-            201,
-          );
+          return respond(request);
         }),
       ),
     );
@@ -52,5 +54,50 @@ void main() {
       'visibility': 'private',
       'scheduledAt': '2026-10-28T20:00:00.000Z',
     });
+  });
+
+  test('joining again after a stale session leaves first', () async {
+    var joins = 0;
+    respond = (request) {
+      if (request.url.path.endsWith('/join') && joins++ == 0) {
+        return http.Response(
+          jsonEncode({'message': 'User has already joined this Whisper.'}),
+          409,
+        );
+      }
+      return http.Response(jsonEncode({'success': true}), 200);
+    };
+
+    await dataSource.joinWhisper('w1');
+
+    expect(requests.map((r) => r.url.path), [
+      '/whispers/w1/join',
+      '/whispers/w1/leave',
+      '/whispers/w1/join',
+    ]);
+  });
+
+  test('reads the audio session for the room', () async {
+    respond = (_) => http.Response(
+      jsonEncode({
+        'success': true,
+        'data': {
+          'roomName': 'whisper-room-w1',
+          'accessToken': 'token',
+          'identity': 'whisper:w1:user:me',
+          'role': 'host',
+          'canPublishAudio': true,
+          'canSubscribe': true,
+        },
+      }),
+      200,
+    );
+
+    final session = await dataSource.createMediaSession('w1');
+
+    expect(requests.single.url.path, '/whispers/w1/media/session');
+    expect(session.roomName, 'whisper-room-w1');
+    expect(session.accessToken, 'token');
+    expect(session.canPublishAudio, isTrue);
   });
 }
