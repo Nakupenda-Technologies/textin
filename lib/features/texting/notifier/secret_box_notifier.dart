@@ -74,6 +74,18 @@ class SecretBoxNotifier extends StateNotifier<SecretBoxState> {
     );
   }
 
+  Future<bool> moveOut(String chatId) async {
+    final previous = state.secretConversations;
+    state = state.copyWith(
+      secretConversations: previous.where((c) => c.id != chatId).toList(),
+    );
+    final result = await repository.toggleSecretInbox(chatId, false);
+    if (result.isLeft() && mounted) {
+      state = state.copyWith(secretConversations: previous);
+    }
+    return result.isRight();
+  }
+
   void lock() {
     state = state.copyWith(status: SecretBoxStatus.locked);
   }

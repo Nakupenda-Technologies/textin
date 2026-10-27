@@ -82,10 +82,13 @@ class InboxNotifier extends StateNotifier<InboxState> {
   Future<void> loadConversations() async {
     state = state.copyWith(status: InboxStatus.loading);
 
-    final result = await repository.fetchRegularChats(
-      state.selectedFilterIndex,
-      myUserId: myUserId,
-    );
+    final (result, secret) = await (
+      repository.fetchRegularChats(
+        state.selectedFilterIndex,
+        myUserId: myUserId,
+      ),
+      repository.fetchSecretChats(myUserId: myUserId),
+    ).wait;
 
     result.fold(
       (failure) {
@@ -97,7 +100,7 @@ class InboxNotifier extends StateNotifier<InboxState> {
       (chats) {
         state = state.copyWith(
           status: InboxStatus.loaded,
-          conversations: chats,
+          conversations: [...chats, ...secret.getOrElse(() => [])],
         );
       },
     );
