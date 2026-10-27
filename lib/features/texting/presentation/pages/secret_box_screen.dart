@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/text_style.dart';
+import '../../../../shared/widgets/app_toast.dart';
+import '../../notifier/inbox_notifier.dart';
 import '../../notifier/secret_box_notifier.dart';
 import '../widgets/conversation_tile.dart';
 import 'texting_chat_screen.dart';
@@ -83,6 +85,19 @@ class _SecretBoxScreenState extends ConsumerState<SecretBoxScreen> {
                       builder: (_) => TextingChatScreen(conversation: chat),
                     ),
                   );
+                },
+                onToggleSecret: () async {
+                  final moved = await ref
+                      .read(secretBoxNotifierProvider.notifier)
+                      .moveOut(chat.id);
+                  if (moved) {
+                    ref.read(inboxNotifierProvider.notifier).loadConversations();
+                  } else {
+                    AppToast.error(
+                      "Couldn't move the chat",
+                      'Please check your connection and try again.',
+                    );
+                  }
                 },
               );
             },
