@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -41,8 +43,12 @@ class _FakeTextingRepository implements TextingRepository {
 
 void main() {
   final selected = <FollowingUser>[];
+  Completer<void> chatOpened = Completer();
 
-  setUp(selected.clear);
+  setUp(() {
+    selected.clear();
+    chatOpened = Completer()..complete();
+  });
 
   Future<void> pumpSheet(
     WidgetTester tester,
@@ -55,7 +61,10 @@ void main() {
             repository: repository,
             myUserId: 'me',
             myUsername: 'me',
-            onSelectUser: selected.add,
+            onSelectUser: (user) {
+              selected.add(user);
+              return chatOpened.future;
+            },
           ),
         ),
       ),
@@ -120,5 +129,24 @@ void main() {
 
     expect(find.text('Suggested for you'), findsOneWidget);
     expect(find.text('Follow'), findsOneWidget);
+  });
+
+  testWidgets('stays open while the chat is starting', (tester) async {
+    chatOpened = Completer();
+    await pumpSheet(tester, _FakeTextingRepository(following: [_ada]));
+
+    await tester.tap(find.text('Ada Obi'));
+    await tester.pump();
+
+    expect(find.text('New Conversation'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    await tester.tap(find.text('Ada Obi'));
+    expect(selected, [_ada]);
+
+    chatOpened.complete();
+    await tester.pump();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 }

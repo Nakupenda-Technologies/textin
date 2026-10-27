@@ -21,7 +21,7 @@ class NewChatSheet extends StatefulWidget {
   final TextingRepository repository;
   final String myUserId;
   final String? myUsername;
-  final ValueChanged<FollowingUser> onSelectUser;
+  final Future<void> Function(FollowingUser) onSelectUser;
 
   @override
   State<NewChatSheet> createState() => _NewChatSheetState();
@@ -32,6 +32,7 @@ class _NewChatSheetState extends State<NewChatSheet> {
   List<FollowingUser> _users = [];
   List<FollowingUser> _suggestions = [];
   final Set<String> _pendingFollows = {};
+  String? _openingUserId;
   bool _isLoading = false;
   String? _loadError;
   String _query = '';
@@ -95,6 +96,13 @@ class _NewChatSheetState extends State<NewChatSheet> {
         AppToast.show('You can now chat with ${user.displayName}');
       },
     );
+  }
+
+  Future<void> _open(FollowingUser user) async {
+    if (_openingUserId != null) return;
+    setState(() => _openingUserId = user.id);
+    await widget.onSelectUser(user);
+    if (mounted) setState(() => _openingUserId = null);
   }
 
   bool _matches(FollowingUser user) {
@@ -219,15 +227,17 @@ class _NewChatSheetState extends State<NewChatSheet> {
         for (final user in contacts)
           _PersonTile(
             user: user,
-            trailing: const Icon(
-              Icons.arrow_forward_ios,
-              size: 14,
-              color: AppColors.textSecondary,
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              widget.onSelectUser(user);
-            },
+            trailing: _openingUserId == user.id
+                ? const SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 14,
+                    color: AppColors.textSecondary,
+                  ),
+            onTap: () => _open(user),
           ),
         if (suggestions.isNotEmpty) ...[
           const _SectionLabel('Suggested for you'),
