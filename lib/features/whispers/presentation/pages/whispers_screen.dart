@@ -11,8 +11,8 @@ import '../../notifier/my_whispers_notifier.dart';
 import '../../notifier/whisper_room_notifier.dart';
 import '../../notifier/whispers_notifier.dart';
 import '../widgets/my_whispers_list.dart';
+import '../widgets/whisper_live_room_sheet.dart';
 import 'create_whisper_screen.dart';
-import 'whisper_room_screen.dart';
 
 class WhispersScreen extends ConsumerStatefulWidget {
   const WhispersScreen({super.key});
@@ -45,17 +45,14 @@ class _WhispersScreenState extends ConsumerState<WhispersScreen> {
       AppToast.show("Paid whispers can't be joined from TEXTin yet");
       return;
     }
-    await Navigator.push(
+    await openWhisperRoom(
       context,
-      MaterialPageRoute<void>(
-        builder: (_) => WhisperRoomScreen(
-          args: WhisperRoomArgs(
-            whisperId: whisper.id,
-            title: whisper.title,
-            hostName: whisper.hostDisplayName,
-            isHost: isHost,
-          ),
-        ),
+      WhisperRoomArgs(
+        whisperId: whisper.id,
+        title: whisper.title,
+        hostName: whisper.hostDisplayName,
+        hostAvatarUrl: whisper.hostProfilePicture,
+        isHost: isHost,
       ),
     );
     if (mounted) {

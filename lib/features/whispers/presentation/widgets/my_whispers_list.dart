@@ -10,7 +10,7 @@ import '../../models/my_whisper.dart';
 import '../../notifier/my_whispers_notifier.dart';
 import '../../notifier/whisper_room_notifier.dart';
 import '../../notifier/whispers_notifier.dart';
-import '../pages/whisper_room_screen.dart';
+import 'whisper_live_room_sheet.dart';
 
 final _scheduleFormat = DateFormat('EEE, MMM d · h:mm a');
 
@@ -107,17 +107,15 @@ class _MyWhisperCardState extends ConsumerState<_MyWhisperCard> {
         return;
       }
     }
-    await Navigator.push(
+    final user = ref.read(currentUserProvider);
+    await openWhisperRoom(
       context,
-      MaterialPageRoute<void>(
-        builder: (_) => WhisperRoomScreen(
-          args: WhisperRoomArgs(
-            whisperId: whisper.id,
-            title: whisper.title,
-            hostName: ref.read(currentUserProvider)?.displayName ?? '',
-            isHost: true,
-          ),
-        ),
+      WhisperRoomArgs(
+        whisperId: whisper.id,
+        title: whisper.title,
+        hostName: user?.displayName ?? '',
+        hostAvatarUrl: user?.profilePicture,
+        isHost: true,
       ),
     );
     notifier.load();

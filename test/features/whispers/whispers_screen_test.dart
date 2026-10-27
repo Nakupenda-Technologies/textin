@@ -180,7 +180,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.calls, ['start:w1']);
-    expect(find.text('You are hosting'), findsOneWidget);
+    expect(find.text('Late night talk'), findsWidgets);
+    expect(find.text('End'), findsOneWidget);
   });
 
   testWidgets('tapping a live whisper joins it as a listener', (tester) async {

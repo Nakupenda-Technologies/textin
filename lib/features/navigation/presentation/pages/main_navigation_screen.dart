@@ -3,6 +3,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
 import '../../../texting/presentation/pages/texting_inbox_screen.dart';
 import '../../../whispers/presentation/pages/whispers_screen.dart';
+import '../../../whispers/presentation/widgets/whisper_mini_player.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -31,11 +32,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _index,
+      body: Stack(
         children: [
-          for (var i = 0; i < _tabs.length; i++)
-            _visited.contains(i) ? _tabs[i] : const SizedBox.shrink(),
+          IndexedStack(
+            index: _index,
+            children: [
+              for (var i = 0; i < _tabs.length; i++)
+                _visited.contains(i) ? _tabs[i] : const SizedBox.shrink(),
+            ],
+          ),
+          const Positioned(
+            left: 16,
+            right: 16,
+            bottom: 88,
+            child: WhisperMiniPlayerHost(),
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
