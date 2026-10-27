@@ -1,9 +1,25 @@
 import '../../../config/constants/endpoints.dart';
+import '../../../core/errors/failure.dart';
 import '../../../core/network/client.dart';
 import '../models/live_whisper.dart';
+import '../models/my_whisper.dart';
+import '../models/whisper_media_session.dart';
+import '../models/whisper_room_snapshot.dart';
 
 abstract class WhispersRemoteDataSource {
   Future<List<LiveWhisper>> fetchLiveWhispers();
+  Future<List<MyWhisper>> fetchMyWhispers();
+  Future<String> createWhisper({
+    required String title,
+    required bool isPrivate,
+    DateTime? scheduledAt,
+  });
+  Future<void> startWhisper(String id);
+  Future<void> endWhisper(String id);
+  Future<void> joinWhisper(String id);
+  Future<void> leaveWhisper(String id);
+  Future<WhisperMediaSession> createMediaSession(String id);
+  Future<WhisperRoomSnapshot> fetchRoomState(String id);
 }
 
 class WhispersRemoteDataSourceImpl implements WhispersRemoteDataSource {
@@ -19,4 +35,82 @@ class WhispersRemoteDataSourceImpl implements WhispersRemoteDataSource {
     );
     return LiveWhisper.listFromResponse(response);
   }
+
+  @override
+  Future<List<MyWhisper>> fetchMyWhispers() async {
+    final dynamic response = await client.get(
+      Endpoints.myWhispers,
+      queryParameters: {'limit': '50'},
+    );
+    return MyWhisper.listFromResponse(response);
+  }
+
+  @override
+  Future<String> createWhisper({
+    required String title,
+    required bool isPrivate,
+    DateTime? scheduledAt,
+  }) async {
+    final dynamic response = await client.post(
+      Endpoints.whispers,
+      body: {
+        'title': title,
+        'visibility': isPrivate ? 'private' : 'public',
+        'scheduledAt': ?scheduledAt?.toUtc().toIso8601String(),
+      },
+    );
+    final data = response is Map<String, dynamic> ? response['data'] : null;
+    final id = data is Map<String, dynamic> ? data['id'] : null;
+    if (id is String && id.isNotEmpty) return id;
+    throw const ServerFailure('The whisper was not created');
+  }
+
+  @override
+  Future<void> startWhisper(String id) async {
+    await client.post(Endpoints.startWhisper(id), body: {});
+  }
+
+  @override
+  Future<void> endWhisper(String id) async {
+    await client.post(Endpoints.endWhisper(id), body: {});
+  }
+
+  @override
+  Future<void> joinWhisper(String id) async {
+    try {
+      await _join(id);
+    } on ServerFailure catch (e) {
+      // A previous session that never left still counts as joined.
+      if (e.statusCode != 409) rethrow;
+      await leaveWhisper(id);
+      await _join(id);
+    }
+  }
+
+  Future<void> _join(String id) =>
+      client.post(Endpoints.joinWhisper(id), body: {});
+
+  @override
+  Future<void> leaveWhisper(String id) async {
+    await client.post(Endpoints.leaveWhisper(id), body: {});
+  }
+
+  @override
+  Future<WhisperMediaSession> createMediaSession(String id) async {
+    final dynamic response = await client.post(
+      Endpoints.whisperMediaSession(id),
+      body: {},
+    );
+    final session = WhisperMediaSession.fromResponse(response);
+    if (session.accessToken.isEmpty || session.roomName.isEmpty) {
+      throw const ServerFailure('The audio session could not be created');
+    }
+    return session;
+  }
+
+  @override
+  Future<WhisperRoomSnapshot> fetchRoomState(String id) async =>
+      WhisperRoomSnapshot.fromResponse(
+        await client.get(Endpoints.whisperRoomState(id)),
+      );
 }

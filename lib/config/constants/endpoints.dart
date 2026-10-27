@@ -53,7 +53,15 @@ class Endpoints {
   static const String profilePictureUpload = '/media/upload/profiles';
 
   // Whispers
+  static const String whispers = '/whispers';
   static const String liveWhispers = '/whispers/live';
+  static const String myWhispers = '/whispers/mine';
+  static String startWhisper(String id) => '/whispers/$id/start';
+  static String endWhisper(String id) => '/whispers/$id/end';
+  static String joinWhisper(String id) => '/whispers/$id/join';
+  static String leaveWhisper(String id) => '/whispers/$id/leave';
+  static String whisperMediaSession(String id) => '/whispers/$id/media/session';
+  static String whisperRoomState(String id) => '/whispers/$id/room-state';
 
   // Media upload
   static const String mediaUpload = '/media/upload/messaging';

@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/storage/shared_pref_keys.dart';
 import '../../../core/storage/shared_preferences_store.dart';
