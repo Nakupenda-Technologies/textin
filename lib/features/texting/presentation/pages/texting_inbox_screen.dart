@@ -5,6 +5,7 @@ import '../../../../core/di/locator.dart';
 import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/app_shimmer.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../auth/notifier/session_notifier.dart';
 import '../../models/conversation.dart';
 import '../../notifier/inbox_notifier.dart';
@@ -63,19 +64,26 @@ class _TextingInboxScreenState extends ConsumerState<TextingInboxScreen> {
         myUsername: ref.read(currentUserProvider)?.username,
         onSelectUser: (user) async {
           final navigator = Navigator.of(context);
-          final messenger = ScaffoldMessenger.of(context);
           final result = await locator<TextingRepository>().startOrGetChat(
             otherUserId: user.id,
             myUserId: myUserId,
           );
           result.fold(
-            (failure) {
-              messenger.showSnackBar(SnackBar(content: Text(failure.message)));
-            },
+            (failure) => AppToast.failure(
+              "Couldn't start a chat with ${user.displayName}",
+              failure,
+            ),
             (conversation) {
+              Navigator.pop(ctx);
               navigator.push(
                 MaterialPageRoute(
-                  builder: (_) => TextingChatScreen(conversation: conversation),
+                  builder: (_) => TextingChatScreen(
+                    conversation: conversation.copyWith(
+                      name: user.displayName,
+                      otherUserId: user.id,
+                      avatarUrl: user.profilePicture,
+                    ),
+                  ),
                 ),
               );
             },

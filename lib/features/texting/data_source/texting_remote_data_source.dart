@@ -40,6 +40,8 @@ abstract class TextingRemoteDataSource {
     String? matchId,
   });
   Future<List<FollowingUser>> fetchFollowingUsers(String username);
+  Future<List<FollowingUser>> fetchSuggestedUsers();
+  Future<void> followUser(String username);
 }
 
 class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
@@ -218,13 +220,34 @@ class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
 
   @override
   Future<List<FollowingUser>> fetchFollowingUsers(String username) async {
-    final dynamic response = await client.get(Endpoints.userFollowing(username));
-    if (response is Map<String, dynamic> && response['data'] is List) {
-      return (response['data'] as List)
-          .map((e) => FollowingUser.fromJson(e as Map<String, dynamic>))
-          .toList();
-    }
-    return [];
+    final dynamic response = await client.get(
+      Endpoints.userFollowing(username),
+    );
+    return _users(response, 'users');
+  }
+
+  @override
+  Future<List<FollowingUser>> fetchSuggestedUsers() async {
+    final dynamic response = await client.get(
+      Endpoints.suggestedAccounts,
+      queryParameters: {'limit': '20'},
+    );
+    return _users(response, 'items');
+  }
+
+  List<FollowingUser> _users(dynamic response, String field) {
+    final data = response is Map<String, dynamic> ? response['data'] : null;
+    final users = data is Map<String, dynamic> ? data[field] : null;
+    if (users is! List) return [];
+    return users
+        .whereType<Map<String, dynamic>>()
+        .map(FollowingUser.fromJson)
+        .toList();
+  }
+
+  @override
+  Future<void> followUser(String username) async {
+    await client.post(Endpoints.followUser(username), body: {});
   }
 
   String _filterString(int index) {
