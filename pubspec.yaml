@@ -54,10 +54,6 @@ dependency_overrides:
   # com.twilio:conversations-android:2.1.2, which was never published to a
   # public Maven repo. These copies stub the unused chat feature so the Video
   # SDK used for whisper live audio compiles.
-  # Vendored without its prebuilt video call screen, the only part that needs
-  # flutter_riverpod 3 (this app is on 2.x).
-  flutter_twilio_commkit:
-    path: third_party/flutter_twilio_commkit
   flutter_twilio_commkit_android:
     path: third_party/flutter_twilio_commkit_android
   flutter_twilio_commkit_ios:
