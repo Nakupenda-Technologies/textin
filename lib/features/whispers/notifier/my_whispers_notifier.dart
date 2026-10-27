@@ -61,4 +61,8 @@ class MyWhispersNotifier extends StateNotifier<MyWhispersState> {
       return null;
     });
   }
+
+  Future<Failure?> start(String id) async => (await repository.startWhisper(
+    id,
+  )).fold((failure) => failure, (_) => null);
 }

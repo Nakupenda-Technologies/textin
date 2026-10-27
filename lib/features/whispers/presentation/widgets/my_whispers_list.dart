@@ -4,9 +4,13 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/app_shimmer.dart';
+import '../../../../shared/widgets/app_toast.dart';
+import '../../../auth/notifier/session_notifier.dart';
 import '../../models/my_whisper.dart';
 import '../../notifier/my_whispers_notifier.dart';
+import '../../notifier/whisper_room_notifier.dart';
 import '../../notifier/whispers_notifier.dart';
+import '../pages/whisper_room_screen.dart';
 
 final _scheduleFormat = DateFormat('EEE, MMM d · h:mm a');
 
@@ -67,10 +71,19 @@ class MyWhispersList extends ConsumerWidget {
   }
 }
 
-class _MyWhisperCard extends StatelessWidget {
+class _MyWhisperCard extends ConsumerStatefulWidget {
   const _MyWhisperCard({required this.whisper});
 
   final MyWhisper whisper;
+
+  @override
+  ConsumerState<_MyWhisperCard> createState() => _MyWhisperCardState();
+}
+
+class _MyWhisperCardState extends ConsumerState<_MyWhisperCard> {
+  bool _isStarting = false;
+
+  MyWhisper get whisper => widget.whisper;
 
   String get _statusLabel => switch (whisper.status) {
     WhisperStatus.draft => 'Draft',
@@ -81,6 +94,34 @@ class _MyWhisperCard extends StatelessWidget {
     WhisperStatus.live => 'Live now',
     WhisperStatus.ended => 'Ended',
   };
+
+  Future<void> _goLive() async {
+    final notifier = ref.read(myWhispersNotifierProvider.notifier);
+    if (whisper.status != WhisperStatus.live) {
+      setState(() => _isStarting = true);
+      final failure = await notifier.start(whisper.id);
+      if (!mounted) return;
+      setState(() => _isStarting = false);
+      if (failure != null) {
+        AppToast.failure("Couldn't go live", failure);
+        return;
+      }
+    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => WhisperRoomScreen(
+          args: WhisperRoomArgs(
+            whisperId: whisper.id,
+            title: whisper.title,
+            hostName: ref.read(currentUserProvider)?.displayName ?? '',
+            isHost: true,
+          ),
+        ),
+      ),
+    );
+    notifier.load();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,6 +175,24 @@ class _MyWhisperCard extends StatelessWidget {
                 color: AppTheme.textingTimestamp,
               ),
             ),
+          if (whisper.status != WhisperStatus.ended) ...[
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: _isStarting ? null : _goLive,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.textred,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(84, 34),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+              ),
+              child: _isStarting
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(isLive ? 'Rejoin' : 'Go live'),
+            ),
+          ],
         ],
       ),
     );
