@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:textin/core/errors/failure.dart';
 import 'package:textin/core/storage/shared_preferences_store.dart';
 import 'package:textin/features/texting/models/api/chat_message_api.dart';
+import 'package:textin/features/texting/models/api/chat_streak.dart';
 import 'package:textin/features/texting/models/message.dart';
 import 'package:textin/features/texting/notifier/chat_notifier.dart';
 import 'package:textin/features/texting/services/texting_socket_service.dart';
@@ -80,6 +81,20 @@ class _ImageUploadingRepository extends MockTextingRepository {
   }
 }
 
+class _StreakRepository extends _BlankReplyRepository {
+  _StreakRepository(this.streaks);
+
+  final List<ChatStreak?> streaks;
+  int fetches = 0;
+
+  @override
+  Future<Either<Failure, ChatStreak?>> fetchStreak(String chatId) async {
+    final streak = streaks[fetches.clamp(0, streaks.length - 1)];
+    fetches++;
+    return Right(streak);
+  }
+}
+
 class _FakeSocketService extends TextingSocketService {
   _FakeSocketService() : super(WebSocketService());
 
@@ -130,6 +145,60 @@ void main() {
     expect(sent.content, 'Hiii');
     expect(sent.isMe, isTrue);
     expect(sent.status, MessageStatus.sent);
+  });
+
+  group('streak', () {
+    final yesterday = ChatStreak(
+      count: 4,
+      level: 'bronze',
+      lastActivityAt: DateTime.now().toUtc().subtract(const Duration(days: 1)),
+    );
+    final today = ChatStreak(
+      count: 5,
+      level: 'bronze',
+      lastActivityAt: DateTime.now().toUtc(),
+    );
+
+    ChatNotifier streakNotifier(_StreakRepository repository) {
+      final notifier = ChatNotifier(
+        chatId: 'chat_1',
+        otherUserId: 'other',
+        myUserId: 'me',
+        repository: repository,
+        socketService: TextingSocketService(WebSocketService()),
+      );
+      addTearDown(notifier.dispose);
+      return notifier;
+    }
+
+    test('loads when the chat opens', () async {
+      final notifier = streakNotifier(_StreakRepository([yesterday]));
+      await pumpEventQueue();
+
+      expect(notifier.state.streak, yesterday);
+    });
+
+    test('refreshes after sending while today is not kept yet', () async {
+      final repository = _StreakRepository([yesterday, today]);
+      final notifier = streakNotifier(repository);
+      await pumpEventQueue();
+
+      await notifier.sendText('Hiii');
+      await pumpEventQueue();
+
+      expect(notifier.state.streak, today);
+    });
+
+    test('is not fetched again once today is kept', () async {
+      final repository = _StreakRepository([today]);
+      final notifier = streakNotifier(repository);
+      await pumpEventQueue();
+
+      await notifier.sendText('Hiii');
+      await pumpEventQueue();
+
+      expect(repository.fetches, 1);
+    });
   });
 
   test('message payloads are unwrapped from message or data keys', () {

@@ -6,6 +6,7 @@ import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/app_shimmer.dart';
 import '../../../user_profile/presentation/pages/user_profile_screen.dart';
+import '../../models/api/chat_streak.dart';
 import '../../models/conversation.dart';
 import '../../notifier/chat_notifier.dart';
 import '../../notifier/inbox_notifier.dart';
@@ -86,6 +87,7 @@ class _ChatViewState extends ConsumerState<_ChatView> {
       appBar: _ChatHeader(
         conversation: widget.conversation,
         isTyping: state.isOtherUserTyping,
+        streak: state.streak,
       ),
       body: Column(
         children: [
@@ -172,10 +174,15 @@ class _ChatViewState extends ConsumerState<_ChatView> {
 }
 
 class _ChatHeader extends StatelessWidget implements PreferredSizeWidget {
-  const _ChatHeader({required this.conversation, required this.isTyping});
+  const _ChatHeader({
+    required this.conversation,
+    required this.isTyping,
+    required this.streak,
+  });
 
   final Conversation conversation;
   final bool isTyping;
+  final ChatStreak? streak;
 
   @override
   Size get preferredSize => const Size.fromHeight(72);
@@ -275,12 +282,9 @@ class _ChatHeader extends StatelessWidget implements PreferredSizeWidget {
                                     ),
                                   ),
                                 ),
-                                if (conversation.hasFireBadge) ...[
-                                  const SizedBox(width: 4),
-                                  const Text(
-                                    '🔥',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
+                                if (streak != null && streak!.count > 0) ...[
+                                  const SizedBox(width: 6),
+                                  _StreakBadge(streak: streak!),
                                 ],
                               ],
                             ),
@@ -322,6 +326,35 @@ class _ChatHeader extends StatelessWidget implements PreferredSizeWidget {
               _HeaderButton(icon: Icons.more_vert, onTap: () {}),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StreakBadge extends StatelessWidget {
+  const _StreakBadge({required this.streak});
+
+  final ChatStreak streak;
+
+  @override
+  Widget build(BuildContext context) {
+    final kept = streak.isKeptOn(DateTime.now());
+    final level = streak.level.isEmpty
+        ? ''
+        : '${streak.level[0].toUpperCase()}${streak.level.substring(1)} streak · ';
+
+    return Tooltip(
+      triggerMode: TooltipTriggerMode.tap,
+      message: kept
+          ? '${level}kept for today'
+          : '${level}send a message today to keep it',
+      child: Text(
+        kept ? '🔥 ${streak.count}' : '🔥 ${streak.count} ⏳',
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: kept ? AppTheme.textred : AppTheme.iconColor,
         ),
       ),
     );

@@ -99,6 +99,18 @@ class ChatNotifier extends StateNotifier<ChatState> {
       socketService.onNewMessage(_handleIncomingMessage),
       socketService.onTyping(_handleTyping),
     ];
+    loadStreak();
+  }
+
+  Future<void> loadStreak() async {
+    final result = await repository.fetchStreak(chatId);
+    if (!mounted) return;
+    result.fold((_) {}, (streak) => state = state.copyWith(streak: streak));
+  }
+
+  void _refreshStreakIfNotKept() {
+    if (state.streak?.isKeptOn(DateTime.now()) ?? false) return;
+    loadStreak();
   }
 
   void _handleIncomingMessage(Map<String, dynamic> data) {
@@ -124,6 +136,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       messages: [...state.messages, msg],
       isOtherUserTyping: msg.isMe ? null : false,
     );
+    _refreshStreakIfNotKept();
   }
 
   void _handleTyping(String typingChatId, String userId, bool isTyping) {
@@ -329,6 +342,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         .map((m) => m.id == optimistic.id ? confirmed : m)
         .toList();
     state = state.copyWith(messages: updated);
+    _refreshStreakIfNotKept();
   }
 
   @override

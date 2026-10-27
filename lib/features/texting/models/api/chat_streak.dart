@@ -3,30 +3,35 @@ import 'package:equatable/equatable.dart';
 class ChatStreak extends Equatable {
   const ChatStreak({
     required this.count,
-    required this.isActive,
-    this.lastMessageAt,
+    required this.level,
+    this.lastActivityAt,
   });
 
+  // The backend streak is a score that grows once per active UTC day and
+  // decays while the chat is quiet, so it arrives as a fractional value.
   factory ChatStreak.fromJson(Map<String, dynamic> json) {
     return ChatStreak(
-      count: json['count'] as int? ?? 0,
-      isActive: json['isActive'] as bool? ?? false,
-      lastMessageAt: json['lastMessageAt'] != null
-          ? DateTime.tryParse(json['lastMessageAt'].toString())?.toLocal()
-          : null,
+      count: (json['value'] as num?)?.floor() ?? 0,
+      level: json['level'] as String? ?? '',
+      lastActivityAt: DateTime.tryParse(
+        json['lastActivityAt'] as String? ?? '',
+      ),
     );
   }
 
   final int count;
-  final bool isActive;
-  final DateTime? lastMessageAt;
+  final String level;
+  final DateTime? lastActivityAt;
 
-  Map<String, dynamic> toJson() => {
-    'count': count,
-    'isActive': isActive,
-    if (lastMessageAt != null) 'lastMessageAt': lastMessageAt!.toIso8601String(),
-  };
+  bool isKeptOn(DateTime now) {
+    final last = lastActivityAt?.toUtc();
+    final today = now.toUtc();
+    return last != null &&
+        last.year == today.year &&
+        last.month == today.month &&
+        last.day == today.day;
+  }
 
   @override
-  List<Object?> get props => [count, isActive, lastMessageAt];
+  List<Object?> get props => [count, level, lastActivityAt];
 }

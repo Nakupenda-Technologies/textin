@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../models/api/chat_streak.dart';
 import '../models/chat_customization.dart';
 import '../models/message.dart';
 
@@ -14,6 +15,7 @@ class ChatState extends Equatable {
     this.errorMessage,
     this.draftText = '',
     this.customization = const ChatCustomization(),
+    this.streak,
   });
 
   final ChatStatus status;
@@ -24,6 +26,7 @@ class ChatState extends Equatable {
   final String? errorMessage;
   final String draftText;
   final ChatCustomization customization;
+  final ChatStreak? streak;
 
   ChatState copyWith({
     ChatStatus? status,
@@ -35,6 +38,7 @@ class ChatState extends Equatable {
     String? errorMessage,
     String? draftText,
     ChatCustomization? customization,
+    ChatStreak? streak,
   }) {
     return ChatState(
       status: status ?? this.status,
@@ -45,6 +49,7 @@ class ChatState extends Equatable {
       errorMessage: errorMessage ?? this.errorMessage,
       draftText: draftText ?? this.draftText,
       customization: customization ?? this.customization,
+      streak: streak ?? this.streak,
     );
   }
 
@@ -58,5 +63,6 @@ class ChatState extends Equatable {
     errorMessage,
     draftText,
     customization,
+    streak,
   ];
 }
