@@ -67,3 +67,6 @@ app.*.map.json
 .agents/
 AGENTS.md
 
+
+# Lockfiles generated inside vendored plugins
+third_party/*/pubspec.lock
