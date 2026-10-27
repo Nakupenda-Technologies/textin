@@ -170,6 +170,11 @@ class MockTextingRepository implements TextingRepository {
   Future<Either<Failure, List<FollowingUser>>> fetchSuggestedUsers() async {
     return const Right([]);
   }
+
+  @override
+  Future<Either<Failure, void>> followUser(String username) async {
+    return const Right(null);
+  }
 }
 
 void main() {

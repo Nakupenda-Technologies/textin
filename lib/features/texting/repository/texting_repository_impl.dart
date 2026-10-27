@@ -262,4 +262,16 @@ class TextingRepositoryImpl implements TextingRepository {
       return Left(UnknownFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> followUser(String username) async {
+    try {
+      await remoteDataSource.followUser(username);
+      return const Right(null);
+    } on Failure catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(UnknownFailure(e.toString()));
+    }
+  }
 }

@@ -41,6 +41,7 @@ abstract class TextingRemoteDataSource {
   });
   Future<List<FollowingUser>> fetchFollowingUsers(String username);
   Future<List<FollowingUser>> fetchSuggestedUsers();
+  Future<void> followUser(String username);
 }
 
 class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
@@ -241,6 +242,11 @@ class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
         .whereType<Map<String, dynamic>>()
         .map(FollowingUser.fromJson)
         .toList();
+  }
+
+  @override
+  Future<void> followUser(String username) async {
+    await client.post(Endpoints.followUser(username), body: {});
   }
 
   String _filterString(int index) {
