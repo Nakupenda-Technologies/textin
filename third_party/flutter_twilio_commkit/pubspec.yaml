@@ -1,0 +1,51 @@
+name: flutter_twilio_commkit
+description: >-
+  Flutter SDK for Twilio Voice & Video. Native Android/iOS integration with
+  built-in UI, CallKit, FCM/PushKit push, DTMF dialpad, and headless mode.
+version: 0.1.3
+repository: https://github.com/ALAlliancetek/flutter_twilio_commkit
+homepage: https://github.com/ALAlliancetek/flutter_twilio_commkit
+issue_tracker: https://github.com/ALAlliancetek/flutter_twilio_commkit/issues
+
+topics:
+  - twilio
+  - voice
+  - video
+  - voip
+  - communication
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+dependencies:
+  audioplayers: ^6.7.0
+  flutter:
+    sdk: flutter
+  flutter_twilio_commkit_android: ^0.1.2
+  flutter_twilio_commkit_ios: ^0.1.2
+  flutter_twilio_commkit_platform_interface: ^0.1.2
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+# Overrides for local development only.
+# Remove before publishing (all three sub-packages 0.1.2 must be on pub.dev first).
+dependency_overrides:
+  flutter_twilio_commkit_platform_interface:
+    path: ../flutter_twilio_commkit_platform_interface
+  flutter_twilio_commkit_android:
+    path: ../flutter_twilio_commkit_android
+  flutter_twilio_commkit_ios:
+    path: ../flutter_twilio_commkit_ios
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        default_package: flutter_twilio_commkit_android
+      ios:
+        default_package: flutter_twilio_commkit_ios
+
