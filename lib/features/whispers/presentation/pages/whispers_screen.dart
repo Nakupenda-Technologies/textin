@@ -10,9 +10,9 @@ import '../../models/live_whisper.dart';
 import '../../notifier/my_whispers_notifier.dart';
 import '../../notifier/whisper_room_notifier.dart';
 import '../../notifier/whispers_notifier.dart';
+import '../widgets/create_whisper_sheet.dart';
 import '../widgets/my_whispers_list.dart';
 import '../widgets/whisper_live_room_sheet.dart';
-import 'create_whisper_screen.dart';
 
 class WhispersScreen extends ConsumerStatefulWidget {
   const WhispersScreen({super.key});
@@ -30,11 +30,8 @@ class _WhispersScreenState extends ConsumerState<WhispersScreen> {
   }
 
   Future<void> _openCreate() async {
-    final created = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => const CreateWhisperScreen()),
-    );
-    if (created == true && mounted) setState(() => _showMine = true);
+    await showCreateWhisperSheet(context);
+    if (mounted) ref.read(myWhispersNotifierProvider.notifier).load();
   }
 
   Future<void> _openLive(LiveWhisper whisper) async {

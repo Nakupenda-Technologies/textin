@@ -80,13 +80,13 @@ void main() {
     final notifier = MyWhispersNotifier(_FakeWhispersRepository());
     addTearDown(notifier.dispose);
 
-    final failure = await notifier.create(
+    final result = await notifier.create(
       title: 'Late night talk',
       isPrivate: false,
     );
     await pumpEventQueue();
 
-    expect(failure, isNull);
+    expect(result, const Right<Failure, String>('w1'));
     expect(notifier.state.status, WhispersStatus.loaded);
     expect(notifier.state.whispers, [_draft]);
   });
@@ -97,9 +97,12 @@ void main() {
     final notifier = MyWhispersNotifier(repository);
     addTearDown(notifier.dispose);
 
-    final failure = await notifier.create(title: '', isPrivate: false);
+    final result = await notifier.create(title: '', isPrivate: false);
 
-    expect(failure?.message, 'Title is required');
+    expect(
+      result,
+      const Left<Failure, String>(ServerFailure('Title is required')),
+    );
     expect(notifier.state.whispers, isEmpty);
   });
 }

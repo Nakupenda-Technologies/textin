@@ -1,3 +1,4 @@
+import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import '../../../core/di/locator.dart';
@@ -46,7 +47,7 @@ class MyWhispersNotifier extends StateNotifier<MyWhispersState> {
     );
   }
 
-  Future<Failure?> create({
+  Future<Either<Failure, String>> create({
     required String title,
     required bool isPrivate,
     DateTime? scheduledAt,
@@ -56,10 +57,8 @@ class MyWhispersNotifier extends StateNotifier<MyWhispersState> {
       isPrivate: isPrivate,
       scheduledAt: scheduledAt,
     );
-    return result.fold((failure) => failure, (_) {
-      load();
-      return null;
-    });
+    if (result.isRight()) load();
+    return result;
   }
 
   Future<Failure?> start(String id) async => (await repository.startWhisper(

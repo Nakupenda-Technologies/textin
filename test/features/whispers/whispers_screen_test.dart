@@ -159,7 +159,7 @@ void main() {
     await tester.tap(find.text('New whisper'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Create whisper'), findsOneWidget);
+    expect(find.text('Create New Whisper'), findsOneWidget);
   });
 
   testWidgets('going live starts the whisper and opens the room', (
