@@ -40,6 +40,7 @@ abstract class TextingRemoteDataSource {
     String? matchId,
   });
   Future<List<FollowingUser>> fetchFollowingUsers(String username);
+  Future<List<FollowingUser>> fetchSuggestedUsers();
 }
 
 class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
@@ -225,6 +226,21 @@ class TextingRemoteDataSourceImpl implements TextingRemoteDataSource {
           .toList();
     }
     return [];
+  }
+
+  @override
+  Future<List<FollowingUser>> fetchSuggestedUsers() async {
+    final dynamic response = await client.get(
+      Endpoints.suggestedAccounts,
+      queryParameters: {'limit': '20'},
+    );
+    final data = response is Map<String, dynamic> ? response['data'] : null;
+    final items = data is Map<String, dynamic> ? data['items'] : null;
+    if (items is! List) return [];
+    return items
+        .whereType<Map<String, dynamic>>()
+        .map(FollowingUser.fromJson)
+        .toList();
   }
 
   String _filterString(int index) {

@@ -251,4 +251,15 @@ class TextingRepositoryImpl implements TextingRepository {
       return Left(UnknownFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, List<FollowingUser>>> fetchSuggestedUsers() async {
+    try {
+      return Right(await remoteDataSource.fetchSuggestedUsers());
+    } on Failure catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(UnknownFailure(e.toString()));
+    }
+  }
 }

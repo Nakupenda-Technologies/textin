@@ -67,4 +67,6 @@ abstract class TextingRepository {
   Future<Either<Failure, List<FollowingUser>>> fetchFollowingUsers(
     String username,
   );
+
+  Future<Either<Failure, List<FollowingUser>>> fetchSuggestedUsers();
 }
