@@ -8,7 +8,7 @@ import '../models/whisper_media_session.dart';
 abstract class WhispersRepository {
   Future<Either<Failure, List<LiveWhisper>>> fetchLiveWhispers();
   Future<Either<Failure, List<MyWhisper>>> fetchMyWhispers();
-  Future<Either<Failure, void>> createWhisper({
+  Future<Either<Failure, String>> createWhisper({
     required String title,
     required bool isPrivate,
     DateTime? scheduledAt,
@@ -34,7 +34,7 @@ class WhispersRepositoryImpl implements WhispersRepository {
       _guard(remoteDataSource.fetchMyWhispers);
 
   @override
-  Future<Either<Failure, void>> createWhisper({
+  Future<Either<Failure, String>> createWhisper({
     required String title,
     required bool isPrivate,
     DateTime? scheduledAt,

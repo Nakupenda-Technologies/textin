@@ -32,7 +32,12 @@ void main() {
   });
 
   test('creates a public draft whisper', () async {
-    await dataSource.createWhisper(title: 'Late night talk', isPrivate: false);
+    final id = await dataSource.createWhisper(
+      title: 'Late night talk',
+      isPrivate: false,
+    );
+
+    expect(id, 'w1');
 
     expect(requests.single.method, 'POST');
     expect(requests.single.url.path, '/whispers');

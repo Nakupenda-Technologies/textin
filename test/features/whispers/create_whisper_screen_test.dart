@@ -10,14 +10,14 @@ import 'package:textin/features/whispers/repository/whispers_repository.dart';
 
 class _FakeWhispersRepository implements WhispersRepository {
   final created = <(String, bool, DateTime?)>[];
-  Either<Failure, void> createResult = const Right(null);
+  Either<Failure, String> createResult = const Right('w1');
 
   @override
   Future<Either<Failure, List<MyWhisper>>> fetchMyWhispers() async =>
       const Right([]);
 
   @override
-  Future<Either<Failure, void>> createWhisper({
+  Future<Either<Failure, String>> createWhisper({
     required String title,
     required bool isPrivate,
     DateTime? scheduledAt,

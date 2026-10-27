@@ -14,14 +14,14 @@ const _draft = MyWhisper(
 
 class _FakeWhispersRepository implements WhispersRepository {
   List<MyWhisper> mine = [];
-  Either<Failure, void> createResult = const Right(null);
+  Either<Failure, String> createResult = const Right('w1');
 
   @override
   Future<Either<Failure, List<MyWhisper>>> fetchMyWhispers() async =>
       Right(mine);
 
   @override
-  Future<Either<Failure, void>> createWhisper({
+  Future<Either<Failure, String>> createWhisper({
     required String title,
     required bool isPrivate,
     DateTime? scheduledAt,

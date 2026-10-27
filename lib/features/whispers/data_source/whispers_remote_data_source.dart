@@ -8,7 +8,7 @@ import '../models/whisper_media_session.dart';
 abstract class WhispersRemoteDataSource {
   Future<List<LiveWhisper>> fetchLiveWhispers();
   Future<List<MyWhisper>> fetchMyWhispers();
-  Future<void> createWhisper({
+  Future<String> createWhisper({
     required String title,
     required bool isPrivate,
     DateTime? scheduledAt,
@@ -44,12 +44,12 @@ class WhispersRemoteDataSourceImpl implements WhispersRemoteDataSource {
   }
 
   @override
-  Future<void> createWhisper({
+  Future<String> createWhisper({
     required String title,
     required bool isPrivate,
     DateTime? scheduledAt,
   }) async {
-    await client.post(
+    final dynamic response = await client.post(
       Endpoints.whispers,
       body: {
         'title': title,
@@ -57,6 +57,10 @@ class WhispersRemoteDataSourceImpl implements WhispersRemoteDataSource {
         'scheduledAt': ?scheduledAt?.toUtc().toIso8601String(),
       },
     );
+    final data = response is Map<String, dynamic> ? response['data'] : null;
+    final id = data is Map<String, dynamic> ? data['id'] : null;
+    if (id is String && id.isNotEmpty) return id;
+    throw const ServerFailure('The whisper was not created');
   }
 
   @override
