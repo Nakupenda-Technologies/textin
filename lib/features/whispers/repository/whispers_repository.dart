@@ -4,6 +4,7 @@ import '../data_source/whispers_remote_data_source.dart';
 import '../models/live_whisper.dart';
 import '../models/my_whisper.dart';
 import '../models/whisper_media_session.dart';
+import '../models/whisper_room_snapshot.dart';
 
 abstract class WhispersRepository {
   Future<Either<Failure, List<LiveWhisper>>> fetchLiveWhispers();
@@ -18,6 +19,7 @@ abstract class WhispersRepository {
   Future<Either<Failure, void>> joinWhisper(String id);
   Future<Either<Failure, void>> leaveWhisper(String id);
   Future<Either<Failure, WhisperMediaSession>> createMediaSession(String id);
+  Future<Either<Failure, WhisperRoomSnapshot>> fetchRoomState(String id);
 }
 
 class WhispersRepositoryImpl implements WhispersRepository {
@@ -65,6 +67,10 @@ class WhispersRepositoryImpl implements WhispersRepository {
   @override
   Future<Either<Failure, WhisperMediaSession>> createMediaSession(String id) =>
       _guard(() => remoteDataSource.createMediaSession(id));
+
+  @override
+  Future<Either<Failure, WhisperRoomSnapshot>> fetchRoomState(String id) =>
+      _guard(() => remoteDataSource.fetchRoomState(id));
 
   Future<Either<Failure, T>> _guard<T>(Future<T> Function() call) async {
     try {

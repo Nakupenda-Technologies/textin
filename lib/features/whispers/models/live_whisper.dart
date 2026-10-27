@@ -6,6 +6,7 @@ class LiveWhisper extends Equatable {
     this.hostId = '',
     required this.title,
     required this.hostDisplayName,
+    this.hostUsername = '',
     this.hostProfilePicture,
     this.hostIsVerified = false,
     this.listenerCount = 0,
@@ -17,6 +18,7 @@ class LiveWhisper extends Equatable {
     hostId: json['hostId'] as String? ?? '',
     title: json['title'] as String? ?? '',
     hostDisplayName: json['hostDisplayName'] as String? ?? '',
+    hostUsername: json['hostUsername'] as String? ?? '',
     hostProfilePicture: json['hostProfilePicture'] as String?,
     hostIsVerified: json['hostIsVerified'] as bool? ?? false,
     listenerCount: (json['listenerCount'] as num?)?.toInt() ?? 0,
@@ -38,6 +40,7 @@ class LiveWhisper extends Equatable {
   final String hostId;
   final String title;
   final String hostDisplayName;
+  final String hostUsername;
   final String? hostProfilePicture;
   final bool hostIsVerified;
   final int listenerCount;
@@ -49,6 +52,7 @@ class LiveWhisper extends Equatable {
     hostId,
     title,
     hostDisplayName,
+    hostUsername,
     hostProfilePicture,
     hostIsVerified,
     listenerCount,

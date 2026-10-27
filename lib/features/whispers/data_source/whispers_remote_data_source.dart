@@ -4,6 +4,7 @@ import '../../../core/network/client.dart';
 import '../models/live_whisper.dart';
 import '../models/my_whisper.dart';
 import '../models/whisper_media_session.dart';
+import '../models/whisper_room_snapshot.dart';
 
 abstract class WhispersRemoteDataSource {
   Future<List<LiveWhisper>> fetchLiveWhispers();
@@ -18,6 +19,7 @@ abstract class WhispersRemoteDataSource {
   Future<void> joinWhisper(String id);
   Future<void> leaveWhisper(String id);
   Future<WhisperMediaSession> createMediaSession(String id);
+  Future<WhisperRoomSnapshot> fetchRoomState(String id);
 }
 
 class WhispersRemoteDataSourceImpl implements WhispersRemoteDataSource {
@@ -105,4 +107,10 @@ class WhispersRemoteDataSourceImpl implements WhispersRemoteDataSource {
     }
     return session;
   }
+
+  @override
+  Future<WhisperRoomSnapshot> fetchRoomState(String id) async =>
+      WhisperRoomSnapshot.fromResponse(
+        await client.get(Endpoints.whisperRoomState(id)),
+      );
 }

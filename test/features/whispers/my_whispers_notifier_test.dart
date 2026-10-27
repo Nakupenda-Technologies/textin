@@ -64,6 +64,18 @@ void main() {
     expect(whispers.last.status, WhisperStatus.draft);
   });
 
+  test('an ended whisper knows how long it ran', () {
+    final whisper = MyWhisper.fromJson({
+      'id': 'w1',
+      'title': 'Late night talk',
+      'status': 'ended',
+      'startedAt': '2026-10-27T20:00:00.000Z',
+      'endedAt': '2026-10-27T21:15:00.000Z',
+    });
+
+    expect(whisper.duration, const Duration(hours: 1, minutes: 15));
+  });
+
   test('creating a whisper reloads my whispers', () async {
     final notifier = MyWhispersNotifier(_FakeWhispersRepository());
     addTearDown(notifier.dispose);

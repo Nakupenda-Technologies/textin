@@ -61,6 +61,7 @@ class Endpoints {
   static String joinWhisper(String id) => '/whispers/$id/join';
   static String leaveWhisper(String id) => '/whispers/$id/leave';
   static String whisperMediaSession(String id) => '/whispers/$id/media/session';
+  static String whisperRoomState(String id) => '/whispers/$id/room-state';
 
   // Media upload
   static const String mediaUpload = '/media/upload/messaging';

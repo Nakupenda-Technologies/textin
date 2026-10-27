@@ -9,6 +9,8 @@ class MyWhisper extends Equatable {
     required this.status,
     this.isPrivate = false,
     this.scheduledAt,
+    this.startedAt,
+    this.endedAt,
   });
 
   factory MyWhisper.fromJson(Map<String, dynamic> json) => MyWhisper(
@@ -17,10 +19,13 @@ class MyWhisper extends Equatable {
     status:
         WhisperStatus.values.asNameMap()[json['status']] ?? WhisperStatus.draft,
     isPrivate: json['visibility'] == 'private',
-    scheduledAt: DateTime.tryParse(
-      json['scheduledAt'] as String? ?? '',
-    )?.toLocal(),
+    scheduledAt: _localTime(json['scheduledAt']),
+    startedAt: _localTime(json['startedAt']),
+    endedAt: _localTime(json['endedAt']),
   );
+
+  static DateTime? _localTime(Object? value) =>
+      DateTime.tryParse(value as String? ?? '')?.toLocal();
 
   static List<MyWhisper> listFromResponse(Object? response) {
     final data = response is Map<String, dynamic> ? response['data'] : null;
@@ -38,7 +43,22 @@ class MyWhisper extends Equatable {
   final WhisperStatus status;
   final bool isPrivate;
   final DateTime? scheduledAt;
+  final DateTime? startedAt;
+  final DateTime? endedAt;
+
+  Duration? get duration => switch ((startedAt, endedAt)) {
+    (final start?, final end?) => end.difference(start),
+    _ => null,
+  };
 
   @override
-  List<Object?> get props => [id, title, status, isPrivate, scheduledAt];
+  List<Object?> get props => [
+    id,
+    title,
+    status,
+    isPrivate,
+    scheduledAt,
+    startedAt,
+    endedAt,
+  ];
 }

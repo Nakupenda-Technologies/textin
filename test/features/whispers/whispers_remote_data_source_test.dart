@@ -105,4 +105,36 @@ void main() {
     expect(session.accessToken, 'token');
     expect(session.canPublishAudio, isTrue);
   });
+
+  test('reads the room roster from room state', () async {
+    respond = (_) => http.Response(
+      jsonEncode({
+        'success': true,
+        'data': {
+          'listenerCount': 2,
+          'hostSummary': {
+            'userId': 'host',
+            'username': 'ada',
+            'displayName': 'Ada Obi',
+            'profilePicture': 'https://cdn.test/ada.jpg',
+          },
+          'coHosts': [],
+          'speakers': [],
+          'listeners': [
+            {'userId': 'u2', 'username': 'ben', 'displayName': ''},
+            {'username': 'no id'},
+          ],
+        },
+      }),
+      200,
+    );
+
+    final snapshot = await dataSource.fetchRoomState('w1');
+
+    expect(requests.single.url.path, '/whispers/w1/room-state');
+    expect(snapshot.listenerCount, 2);
+    expect(snapshot.host?.name, 'Ada Obi');
+    expect(snapshot.host?.avatarUrl, 'https://cdn.test/ada.jpg');
+    expect(snapshot.listeners.map((m) => m.name), ['ben']);
+  });
 }
