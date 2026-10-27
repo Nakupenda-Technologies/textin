@@ -1,28 +1,28 @@
 import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AppProviderObserver extends ProviderObserver {
+final class AppProviderObserver extends ProviderObserver {
   const AppProviderObserver();
 
   @override
   void didUpdateProvider(
-    ProviderBase<Object?> provider,
+    ProviderObserverContext context,
     Object? previousValue,
     Object? newValue,
-    ProviderContainer container,
   ) {
-    super.didUpdateProvider(provider, previousValue, newValue, container);
+    super.didUpdateProvider(context, previousValue, newValue);
+    final provider = context.provider;
     log('didUpdateProvider(${provider.name ?? provider.runtimeType}, $newValue)');
   }
 
   @override
   void providerDidFail(
-    ProviderBase<Object?> provider,
+    ProviderObserverContext context,
     Object error,
     StackTrace stackTrace,
-    ProviderContainer container,
   ) {
+    final provider = context.provider;
     log('providerDidFail(${provider.name ?? provider.runtimeType}, $error, $stackTrace)');
-    super.providerDidFail(provider, error, stackTrace, container);
+    super.providerDidFail(context, error, stackTrace);
   }
 }
