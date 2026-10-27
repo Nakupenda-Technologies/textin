@@ -109,13 +109,37 @@ class _CreateWhisperScreenState extends ConsumerState<CreateWhisperScreen> {
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Private'),
-              subtitle: const Text('Only people you invite can join'),
-              value: _isPrivate,
-              onChanged: (value) => setState(() => _isPrivate = value),
+            Text('Who can join', style: AppTextStyle.bodySecondary),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<bool>(
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(
+                    value: false,
+                    icon: Icon(Icons.public_rounded),
+                    label: Text('Public'),
+                  ),
+                  ButtonSegment(
+                    value: true,
+                    icon: Icon(Icons.lock_outline_rounded),
+                    label: Text('Private'),
+                  ),
+                ],
+                selected: {_isPrivate},
+                onSelectionChanged: (selection) =>
+                    setState(() => _isPrivate = selection.single),
+              ),
             ),
+            const SizedBox(height: 6),
+            Text(
+              _isPrivate
+                  ? 'Only people you invite can join'
+                  : 'Anyone can find and join',
+              style: AppTextStyle.bodySecondary.copyWith(fontSize: 12),
+            ),
+            const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Schedule for later'),

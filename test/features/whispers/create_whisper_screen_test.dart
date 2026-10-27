@@ -71,6 +71,7 @@ void main() {
   testWidgets('needs a title before it can be created', (tester) async {
     await pumpForm(tester);
 
+    await tester.ensureVisible(find.text('Create whisper'));
     await tester.tap(find.text('Create whisper'));
     await tester.pump();
 
@@ -83,6 +84,7 @@ void main() {
     await tester.enterText(find.byType(TextField), '  Late night talk  ');
     await tester.tap(find.text('Private'));
     await tester.pump();
+    await tester.ensureVisible(find.text('Create whisper'));
     await tester.tap(find.text('Create whisper'));
     await tester.pumpAndSettle();
 
@@ -90,14 +92,32 @@ void main() {
     expect(popped, isTrue);
   });
 
+  testWidgets('public is the default choice', (tester) async {
+    await pumpForm(tester);
+
+    expect(find.text('Public'), findsOneWidget);
+    expect(find.text('Anyone can find and join'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'Late night talk');
+    await tester.pump();
+    await tester.ensureVisible(find.text('Create whisper'));
+    await tester.tap(find.text('Create whisper'));
+    await tester.pumpAndSettle();
+
+    expect(repository.created, [('Late night talk', false, null)]);
+  });
+
   testWidgets('stays open when creating fails', (tester) async {
     repository.createResult = const Left(ServerFailure('Nope'));
     await pumpForm(tester);
 
     await tester.enterText(find.byType(TextField), 'Late night talk');
+    await tester.pump();
+    await tester.ensureVisible(find.text('Create whisper'));
     await tester.tap(find.text('Create whisper'));
     await tester.pumpAndSettle();
 
+    expect(repository.created, hasLength(1));
     expect(find.text('New whisper'), findsOneWidget);
     expect(popped, isNull);
   });
