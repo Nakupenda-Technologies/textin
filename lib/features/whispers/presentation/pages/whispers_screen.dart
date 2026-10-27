@@ -5,7 +5,10 @@ import '../../../../core/theme/text_style.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/app_shimmer.dart';
 import '../../models/live_whisper.dart';
+import '../../notifier/my_whispers_notifier.dart';
 import '../../notifier/whispers_notifier.dart';
+import '../widgets/my_whispers_list.dart';
+import 'create_whisper_screen.dart';
 
 class WhispersScreen extends ConsumerStatefulWidget {
   const WhispersScreen({super.key});
@@ -15,6 +18,21 @@ class WhispersScreen extends ConsumerStatefulWidget {
 }
 
 class _WhispersScreenState extends ConsumerState<WhispersScreen> {
+  bool _showMine = false;
+
+  void _selectTab({required bool mine}) {
+    setState(() => _showMine = mine);
+    if (mine) ref.read(myWhispersNotifierProvider.notifier).load();
+  }
+
+  Future<void> _openCreate() async {
+    final created = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const CreateWhisperScreen()),
+    );
+    if (created == true && mounted) setState(() => _showMine = true);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -47,12 +65,35 @@ class _WhispersScreenState extends ConsumerState<WhispersScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Text('Live rooms', style: AppTextStyle.bodySecondary),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              child: Row(
+                children: [
+                  _TabPill(
+                    label: 'Live',
+                    selected: !_showMine,
+                    onTap: () => _selectTab(mine: false),
+                  ),
+                  const SizedBox(width: 8),
+                  _TabPill(
+                    label: 'Mine',
+                    selected: _showMine,
+                    onTap: () => _selectTab(mine: true),
+                  ),
+                ],
+              ),
             ),
-            Expanded(child: _buildBody(state)),
+            Expanded(
+              child: _showMine ? const MyWhispersList() : _buildBody(state),
+            ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openCreate,
+        backgroundColor: AppTheme.textred,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.mic_none_rounded),
+        label: const Text('New whisper'),
       ),
     );
   }
@@ -97,10 +138,56 @@ class _WhispersScreenState extends ConsumerState<WhispersScreen> {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
       itemCount: state.whispers.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (_, index) => _WhisperCard(whisper: state.whispers[index]),
+    );
+  }
+}
+
+class _TabPill extends StatelessWidget {
+  const _TabPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected
+              ? (isDark ? AppTheme.darkRedBg : AppTheme.textingTagRomanticBg2)
+              : (isDark ? AppTheme.darkSurface : AppTheme.bg),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected
+                ? AppTheme.textingActiveRedBorder
+                : (isDark ? AppTheme.darkBorder : AppTheme.grayBg),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isDark
+                ? AppTheme.darkTextingFilterInactiveFg
+                : AppTheme.pillRed,
+          ),
+        ),
+      ),
     );
   }
 }
