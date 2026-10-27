@@ -55,6 +55,7 @@ class Endpoints {
   // Whispers
   static const String whispers = '/whispers';
   static const String liveWhispers = '/whispers/live';
+  static const String myWhispers = '/whispers/mine';
 
   // Media upload
   static const String mediaUpload = '/media/upload/messaging';
