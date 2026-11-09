@@ -45,7 +45,10 @@ class TwilioWhisperAudioEngine implements WhisperAudioEngine {
       (await Permission.microphone.request()).isGranted;
 
   @override
-  Future<void> join(WhisperMediaSession session, {required bool publish}) async {
+  Future<void> join(
+    WhisperMediaSession session, {
+    required bool publish,
+  }) async {
     _accessToken = session.accessToken;
     await _ensureSdkInitialized();
     await leave();
