@@ -56,6 +56,10 @@ class InboxNotifier extends StateNotifier<InboxState> {
   void _handleSocketMessage(Map<String, dynamic> data) {
     final chatId = data['chatId'] as String?;
     if (chatId == null) return;
+    if (!state.conversations.any((c) => c.id == chatId)) {
+      loadConversations();
+      return;
+    }
 
     final newMsg = Message.fromJson(data, myUserId: myUserId);
     final updatedList = state.conversations.map((c) {

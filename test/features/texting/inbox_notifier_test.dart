@@ -188,7 +188,66 @@ class _SecretChatRepository extends MockTextingRepository {
   }
 }
 
+class _CapturingSocketService extends TextingSocketService {
+  _CapturingSocketService() : super(WebSocketService());
+
+  void Function(Map<String, dynamic> data)? onMessage;
+
+  @override
+  void connect() {}
+
+  @override
+  void disconnect() {}
+
+  @override
+  void Function() onNewMessage(
+    void Function(Map<String, dynamic> data) callback,
+  ) {
+    onMessage = callback;
+    return () {};
+  }
+}
+
+class _GrowingRepository extends MockTextingRepository {
+  var fetches = 0;
+
+  @override
+  Future<Either<Failure, List<Conversation>>> fetchRegularChats(
+    int filterIndex, {
+    required String myUserId,
+  }) async {
+    fetches++;
+    return Right([
+      ..._testConversations,
+      if (fetches > 1) const Conversation(id: 'brand_new', name: 'Anuli'),
+    ]);
+  }
+}
+
 void main() {
+  test('a message for an unlisted chat reloads the inbox', () async {
+    SharedPreferences.setMockInitialValues({});
+    await LocalStorageService.init();
+    final socket = _CapturingSocketService();
+    final repository = _GrowingRepository();
+    final notifier = InboxNotifier(
+      repository: repository,
+      socketService: socket,
+      myUserId: 'me',
+    );
+    addTearDown(notifier.dispose);
+    await notifier.loadConversations();
+
+    socket.onMessage!({'chatId': 'brand_new', 'id': 'm9', 'content': 'hi'});
+    await pumpEventQueue();
+
+    expect(repository.fetches, 2);
+    expect(
+      notifier.state.conversations.map((c) => c.id),
+      contains('brand_new'),
+    );
+  });
+
   test('secret chats stay reachable after a fresh load', () async {
     SharedPreferences.setMockInitialValues({});
     await LocalStorageService.init();

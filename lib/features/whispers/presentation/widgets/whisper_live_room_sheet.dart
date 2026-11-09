@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/avatar.dart';
 import '../../notifier/whisper_room_notifier.dart';
@@ -590,8 +591,9 @@ class _EndedPanel extends StatelessWidget {
             child: const Text(
               'Close',
               style: TextStyle(
-                fontSize: 14.8,
-                fontWeight: FontWeight.w800,
+                fontFamily: AppTheme.bodyFont,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
                 color: Colors.white,
               ),
             ),

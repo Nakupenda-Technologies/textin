@@ -25,9 +25,6 @@ class TwilioWhisperAudioEngine implements WhisperAudioEngine {
   @override
   Stream<WhisperAudioEvent> get events => _events.stream;
 
-  // The backend owns the Twilio credentials and issues short-lived room
-  // tokens; these placeholder SIDs only satisfy the SDK's local format check
-  // and are never used for room connections.
   static Future<void> _ensureSdkInitialized() async {
     if (_sdkInitialized) return;
     await TwilioCommKit.initialize(
@@ -48,7 +45,10 @@ class TwilioWhisperAudioEngine implements WhisperAudioEngine {
       (await Permission.microphone.request()).isGranted;
 
   @override
-  Future<void> join(WhisperMediaSession session, {required bool publish}) async {
+  Future<void> join(
+    WhisperMediaSession session, {
+    required bool publish,
+  }) async {
     _accessToken = session.accessToken;
     await _ensureSdkInitialized();
     await leave();
