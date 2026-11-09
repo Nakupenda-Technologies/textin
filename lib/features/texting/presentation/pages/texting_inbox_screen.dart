@@ -64,6 +64,7 @@ class _TextingInboxScreenState extends ConsumerState<TextingInboxScreen> {
         myUsername: ref.read(currentUserProvider)?.username,
         onSelectUser: (user) async {
           final navigator = Navigator.of(context);
+          final inbox = ref.read(inboxNotifierProvider.notifier);
           final result = await locator<TextingRepository>().startOrGetChat(
             otherUserId: user.id,
             myUserId: myUserId,
@@ -85,7 +86,7 @@ class _TextingInboxScreenState extends ConsumerState<TextingInboxScreen> {
                     ),
                   ),
                 ),
-              );
+              ).then((_) => inbox.loadConversations());
             },
           );
         },
