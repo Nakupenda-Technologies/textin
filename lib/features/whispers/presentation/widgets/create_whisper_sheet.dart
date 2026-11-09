@@ -464,8 +464,9 @@ class _PrimaryButton extends StatelessWidget {
             : Text(
                 label,
                 style: const TextStyle(
-                  fontSize: 14.8,
-                  fontWeight: FontWeight.w800,
+                  fontFamily: AppTheme.bodyFont,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
               ),
@@ -503,8 +504,9 @@ class _ScheduleButton extends StatelessWidget {
             Text(
               'Schedule',
               style: TextStyle(
-                fontSize: 14.8,
-                fontWeight: FontWeight.w800,
+                fontFamily: AppTheme.bodyFont,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
                 color: color,
               ),
             ),
