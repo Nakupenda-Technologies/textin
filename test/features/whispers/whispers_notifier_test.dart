@@ -13,6 +13,9 @@ class _FakeWhispersRepository implements WhispersRepository {
   @override
   Future<Either<Failure, List<LiveWhisper>>> fetchLiveWhispers() async =>
       result;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 void main() {

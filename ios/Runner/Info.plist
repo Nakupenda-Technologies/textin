@@ -27,9 +27,13 @@
 	<key>NSCameraUsageDescription</key>
 	<string>TEXTin uses your camera to take photos you send in chats.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>TEXTin uses your microphone to record voice notes.</string>
+	<string>TEXTin uses your microphone to record voice notes and to speak in live whispers.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>TEXTin uses your photo library to send photos in chats.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

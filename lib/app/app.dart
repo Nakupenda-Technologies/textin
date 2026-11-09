@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import '../config/env/env.dart';
 import '../core/di/locator.dart';
 import '../core/errors/failure.dart';

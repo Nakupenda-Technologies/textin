@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/errors/failure.dart';
 import '../../../shared/widgets/app_toast.dart';

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../../../core/di/locator.dart';
 import '../../auth/notifier/session_notifier.dart';
 import '../models/message.dart';
